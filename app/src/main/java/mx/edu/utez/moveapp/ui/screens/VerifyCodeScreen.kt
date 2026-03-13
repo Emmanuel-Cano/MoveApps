@@ -37,6 +37,7 @@ fun VerifyCodeScreen(
             if(viewModel.authMode == "RECOVERY"){
                 navController.navigate("recoveryPassword")
             }
+
         }
     }
 
