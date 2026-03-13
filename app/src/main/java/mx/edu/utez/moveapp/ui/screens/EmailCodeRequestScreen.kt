@@ -23,22 +23,22 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import mx.edu.utez.moveapp.R
 import mx.edu.utez.moveapp.ui.components.buttons.PrimaryButton
-import mx.edu.utez.moveapp.ui.components.inputs.PasswordField
 import mx.edu.utez.moveapp.ui.components.inputs.UserInputField
-import mx.edu.utez.moveapp.ui.components.texts.Link
 import mx.edu.utez.moveapp.ui.components.texts.Title
 import mx.edu.utez.moveapp.viewmodel.LoginViewModel
-import mx.edu.utez.moveapp.ui.theme.MoveAppTheme
 
 
 @Composable
-fun LoginRegisterScreen(viewModel: LoginViewModel, navController: NavController,
+fun EmailCodeRequestScreen(viewModel: LoginViewModel, navController: NavController,
                     onLoginSuccess: () -> Unit){
-    LaunchedEffect(viewModel.goToVerifyCode) {
-        if (viewModel.goToVerifyCode) {
-            onLoginSuccess()
+
+    LaunchedEffect(viewModel.goToVerifyCode){
+        if(viewModel.goToVerifyCode){
+            navController.navigate("verifyCode")
+            viewModel.goToVerifyCode = false
         }
     }
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -94,7 +94,15 @@ fun LoginRegisterScreen(viewModel: LoginViewModel, navController: NavController,
             }
 
             PrimaryButton("Iniciar") {
-                viewModel.sendCode()
+
+                if(viewModel.authMode == "REGISTER"){
+                    viewModel.sendCode()
+                }
+
+                if(viewModel.authMode == "RECOVERY"){
+                    viewModel.changePassword()
+                }
+
             }
 
 
@@ -111,9 +119,9 @@ fun LoginRegisterScreen(viewModel: LoginViewModel, navController: NavController,
 
 @Preview(showBackground = true)
 @Composable
-fun LoginRegisterScreenPreview() {
+fun EmailCodeRequestScreenPreview() {
 
-    LoginRegisterScreen(
+    EmailCodeRequestScreen(
         viewModel = LoginViewModel(),
         navController = rememberNavController(),
         onLoginSuccess = {}

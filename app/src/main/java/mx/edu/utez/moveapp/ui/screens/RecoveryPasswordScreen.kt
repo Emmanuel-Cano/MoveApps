@@ -29,6 +29,7 @@ import mx.edu.utez.moveapp.viewmodel.LoginViewModel
 @Composable
 fun RecoveryPasswordScreen(viewModel: LoginViewModel, navController: NavController,
                             onLoginSuccess: () -> Unit){
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -103,6 +104,7 @@ fun RecoveryPasswordScreen(viewModel: LoginViewModel, navController: NavControll
 
             PrimaryButton("Guardar") {
                 viewModel.addPassword()
+                onLoginSuccess()
             }
 
 

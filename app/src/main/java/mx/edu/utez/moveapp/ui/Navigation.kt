@@ -35,7 +35,7 @@ fun Navigation(){
         }
 
         composable("register") {
-            LoginRegisterScreen(
+            EmailCodeRequestScreen(
                 loginViewModel,
                 navController,
                 onLoginSuccess = {
@@ -48,11 +48,10 @@ fun Navigation(){
             VerifyCodeScreen(
                 loginViewModel,
                 navController,
-                onLoginSuccess = {
-                    navController.navigate("setPassword")
-                }
+                onLoginSuccess = {}
             )
         }
+
 
         composable("setPassword") {
             LoginUserScreenPassword(
@@ -64,16 +63,15 @@ fun Navigation(){
             )
         }
 
-        composable("recuperar") {
+        composable("recoveryPassword") {
             RecoveryPasswordScreen(
                 loginViewModel,
                 navController,
                 onLoginSuccess = {
-                    navController.navigate("home")
+                    navController.navigate("loginUser")
                 }
             )
         }
-
         composable("home") {
 
         }

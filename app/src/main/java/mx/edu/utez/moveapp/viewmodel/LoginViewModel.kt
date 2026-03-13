@@ -27,9 +27,8 @@ class LoginViewModel : ViewModel() {
     var goToHome by mutableStateOf(false)
 
     var userToken: String? by mutableStateOf(null)
-    var firstname by mutableStateOf("")
-    var lastname by mutableStateOf("")
-    var gender by mutableStateOf("")
+
+    var authMode by mutableStateOf("REGISTER")
 
     fun onEmailChange(newEmail: String) {
         email = newEmail
@@ -81,7 +80,7 @@ class LoginViewModel : ViewModel() {
     fun validateCode() {
 
         if (code.length < 6) {
-            errorMessage = "Ingresa el código completo"
+            errorMessage = "Ingresa el codigo completo"
             return
         }
 
@@ -149,6 +148,36 @@ class LoginViewModel : ViewModel() {
         }
     }
 
+    fun changePassword() {
+
+        if (email.isBlank()) {
+            errorMessage = "Ingresa tu correo"
+            return
+        }
+
+        isLoading = true
+        errorMessage = null
+
+        viewModelScope.launch {
+
+            try {
+
+                val response = RetrofitInstance.api.changePassword(email)
+
+                if (response.isSuccessful) {
+                    goToVerifyCode = true
+                } else {
+                    errorMessage = "Error ${response.code()}"
+                }
+
+            } catch (e: Exception) {
+                errorMessage = e.message
+            }
+
+            isLoading = false
+        }
+    }
+
     fun login() {
 
         if (email.isBlank() || password.isBlank()) {
@@ -186,36 +215,8 @@ class LoginViewModel : ViewModel() {
         }
     }
 
-    fun onRegisterClick() {
-        if (firstname.isBlank() || lastname.isBlank() || gender.isBlank()) {
-            errorMessage = "Todos los campos son obligatorios"
-            return
-        }
 
-    }
 
-    fun saveStudentInformation() {
-
-        viewModelScope.launch {
-
-            try {
-
-                val request = StudentRequest(
-                    firstname = firstname,
-                    lastname = lastname,
-                    gender = gender,
-                    email = email
-                )
-
-                RetrofitInstance.api.saveStudentInformation(request)
-
-            } catch (e: Exception) {
-                errorMessage = "Error al guardar información"
-            }
-
-        }
-
-    }
 
     fun clearSession() {
         email = ""

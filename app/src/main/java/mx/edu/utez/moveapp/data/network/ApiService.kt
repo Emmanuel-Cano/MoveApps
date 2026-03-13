@@ -23,5 +23,5 @@ interface ApiService {
 
     @POST("api/student") suspend fun saveStudentInformation(@Body request: StudentRequest): Response<Unit>
 
-    @POST("api/user/changepassword") suspend fun changePassword(@Body request: ChangePasswordRequest): Response<Unit>
+    @POST("api/user/changePassword") suspend fun changePassword(@Query("email") email: String): Response<Unit>
 }

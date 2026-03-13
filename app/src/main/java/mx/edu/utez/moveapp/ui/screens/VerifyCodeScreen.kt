@@ -31,7 +31,12 @@ fun VerifyCodeScreen(
 
     LaunchedEffect(viewModel.goToCreatePassword) {
         if (viewModel.goToCreatePassword) {
-            onLoginSuccess()
+            if(viewModel.authMode == "REGISTER"){
+                navController.navigate("setPassword")
+            }
+            if(viewModel.authMode == "RECOVERY"){
+                navController.navigate("recoveryPassword")
+            }
         }
     }
 

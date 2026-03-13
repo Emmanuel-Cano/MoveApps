@@ -63,6 +63,7 @@ fun LoginScreen(viewModel: LoginViewModel, navController: NavController){
 
 
             SecundaryButton("Registrarse") {
+                viewModel.authMode = "REGISTER"
                 navController.navigate("register")
             }
 
