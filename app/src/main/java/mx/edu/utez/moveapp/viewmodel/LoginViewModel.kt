@@ -18,22 +18,15 @@ class LoginViewModel : ViewModel() {
     var password by mutableStateOf("")
     var confirmPassword by mutableStateOf("")
     var code by mutableStateOf("")
-
+    var passwordToken by mutableStateOf("")
     var isLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
 
     var goToVerifyCode by mutableStateOf(false)
     var goToCreatePassword by mutableStateOf(false)
     var goToHome by mutableStateOf(false)
-
     var userToken: String? by mutableStateOf(null)
-
     var authMode by mutableStateOf("REGISTER")
-
-    fun onEmailChange(newEmail: String) {
-        email = newEmail
-    }
-
     fun onPasswordChange(newPassword: String) {
         password = newPassword
     }
@@ -65,7 +58,7 @@ class LoginViewModel : ViewModel() {
                     goToVerifyCode = true
                 } else {
                     errorMessage =
-                        "Error ${response.code()} - ${response.errorBody()?.string()}"
+                        "Error"
                 }
 
             } catch (e: Exception) {
@@ -93,12 +86,12 @@ class LoginViewModel : ViewModel() {
                 val response = RetrofitInstance.api.validateCode(
                     ValidateCodeRequest(email, code)
                 )
-
                 if (response.isSuccessful) {
+                    passwordToken = response.body()?.passwordToken ?: ""
                     goToCreatePassword = true
                 } else {
                     errorMessage =
-                        "Error ${response.code()} - ${response.errorBody()?.string()}"
+                        "Error"
                 }
 
             } catch (e: Exception) {
@@ -116,7 +109,6 @@ class LoginViewModel : ViewModel() {
             errorMessage = "La contraseña debe tener al menos 10 caracteres"
             return
         }
-
         if (password != confirmPassword) {
             errorMessage = "Las contraseñas no coinciden"
             return
@@ -129,14 +121,14 @@ class LoginViewModel : ViewModel() {
             try {
 
                 val response = RetrofitInstance.api.addPassword(
-                    AddPasswordRequest(email, password)
+                    AddPasswordRequest(email, password, passwordToken)
                 )
 
                 if (response.isSuccessful) {
                     login()
                 } else {
                     errorMessage =
-                        "Error ${response.code()} - ${response.errorBody()?.string()}"
+                        "Error"
                 }
 
             } catch (e: Exception) {
@@ -167,7 +159,7 @@ class LoginViewModel : ViewModel() {
                 if (response.isSuccessful) {
                     goToVerifyCode = true
                 } else {
-                    errorMessage = "Error ${response.code()}"
+                    errorMessage = "Error"
                 }
 
             } catch (e: Exception) {
@@ -203,7 +195,7 @@ class LoginViewModel : ViewModel() {
                 } else {
 
                     errorMessage =
-                        "Error ${response.code()} - ${response.errorBody()?.string()}"
+                        "Error"
                 }
 
             } catch (e: Exception) {

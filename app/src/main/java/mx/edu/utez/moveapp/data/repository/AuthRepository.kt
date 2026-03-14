@@ -13,9 +13,13 @@ class AuthRepository {
             ValidateCodeRequest(email, code)
         )
 
-    suspend fun addPassword(email: String, password: String) =
+    suspend fun addPassword(
+        email: String,
+        password: String,
+        passwordToken: String
+    ) =
         RetrofitInstance.api.addPassword(
-            AddPasswordRequest(email, password)
+            AddPasswordRequest(email, password, passwordToken)
         )
 
     suspend fun login(email: String, password: String) =
