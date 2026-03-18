@@ -45,27 +45,21 @@ class LoginViewModel : ViewModel() {
             errorMessage = "Ingresa tu correo"
             return
         }
-
         isLoading = true
         errorMessage = null
-
         viewModelScope.launch {
             try {
-
                 val response = RetrofitInstance.api.sendCode(email)
-
                 if (response.isSuccessful) {
                     goToVerifyCode = true
                 } else {
                     errorMessage =
                         "Error"
                 }
-
             } catch (e: Exception) {
                 e.printStackTrace()
                 errorMessage = e.message ?: "Error desconocido"
             }
-
             isLoading = false
         }
     }
@@ -76,13 +70,10 @@ class LoginViewModel : ViewModel() {
             errorMessage = "Ingresa el codigo completo"
             return
         }
-
         isLoading = true
         errorMessage = null
-
         viewModelScope.launch {
             try {
-
                 val response = RetrofitInstance.api.validateCode(
                     ValidateCodeRequest(email, code)
                 )
@@ -93,18 +84,15 @@ class LoginViewModel : ViewModel() {
                     errorMessage =
                         "Error"
                 }
-
             } catch (e: Exception) {
                 e.printStackTrace()
                 errorMessage = e.message ?: "Error desconocido"
             }
-
             isLoading = false
         }
     }
 
     fun addPassword() {
-
         if (password.length < 10) {
             errorMessage = "La contraseña debe tener al menos 10 caracteres"
             return
@@ -113,59 +101,45 @@ class LoginViewModel : ViewModel() {
             errorMessage = "Las contraseñas no coinciden"
             return
         }
-
         isLoading = true
         errorMessage = null
-
         viewModelScope.launch {
             try {
-
                 val response = RetrofitInstance.api.addPassword(
                     AddPasswordRequest(email, password, passwordToken)
                 )
-
                 if (response.isSuccessful) {
                     login()
                 } else {
                     errorMessage =
                         "Error"
                 }
-
             } catch (e: Exception) {
                 e.printStackTrace()
                 errorMessage = e.message ?: "Error desconocido"
             }
-
             isLoading = false
         }
     }
 
     fun changePassword() {
-
         if (email.isBlank()) {
             errorMessage = "Ingresa tu correo"
             return
         }
-
         isLoading = true
         errorMessage = null
-
         viewModelScope.launch {
-
             try {
-
                 val response = RetrofitInstance.api.changePassword(email)
-
                 if (response.isSuccessful) {
                     goToVerifyCode = true
                 } else {
                     errorMessage = "Error"
                 }
-
             } catch (e: Exception) {
                 errorMessage = e.message
             }
-
             isLoading = false
         }
     }
@@ -176,10 +150,8 @@ class LoginViewModel : ViewModel() {
             errorMessage = "Ingresa correo y contraseña"
             return
         }
-
         isLoading = true
         errorMessage = null
-
         viewModelScope.launch {
             try {
 
@@ -197,18 +169,13 @@ class LoginViewModel : ViewModel() {
                     errorMessage =
                         "Error"
                 }
-
             } catch (e: Exception) {
                 e.printStackTrace()
                 errorMessage = e.message ?: "Error desconocido"
             }
-
             isLoading = false
         }
     }
-
-
-
 
     fun clearSession() {
         email = ""

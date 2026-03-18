@@ -8,12 +8,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import mx.edu.utez.moveapp.ui.screens.*
 import mx.edu.utez.moveapp.viewmodel.LoginViewModel
+import mx.edu.utez.moveapp.viewmodel.DashboardViewModel
 
 @Composable
 fun Navigation(){
 
     val navController = rememberNavController()
     val loginViewModel: LoginViewModel = viewModel()
+    val dashboardViewModel: DashboardViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -29,7 +31,9 @@ fun Navigation(){
                 loginViewModel,
                 navController,
                 onLoginSuccess = {
-                    navController.navigate("home")
+                    navController.navigate("home"){
+                        popUpTo("login") { inclusive = true }
+                    }
                 }
             )
         }
@@ -73,7 +77,7 @@ fun Navigation(){
             )
         }
         composable("home") {
-
+            DashboardScreen(viewModel = dashboardViewModel)
         }
 
     }
