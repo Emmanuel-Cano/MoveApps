@@ -10,7 +10,23 @@ import mx.edu.utez.moveapp.data.model.TaskStatus
 class DashboardViewModel : ViewModel() {
 
 
+    var advisorName by mutableStateOf("Cargando asesor...")
+    var advisorImage by mutableStateOf("")
     var tasks by mutableStateOf(listOf<Task>())
+        private set
+
+    init {
+        loadMockData()
+    }
+
+    private fun loadMockData() {
+        tasks = listOf(
+            Task(1, "Corregir base de datos", "La base de datos no esta correcta", TaskStatus.TODO),
+            Task(2, "Terminar aplicacion web", "Faltan cosas sencillas", TaskStatus.IN_PROGRESS),
+            Task(3, "Login funcional", "Ya conecta todo con Retrofit", TaskStatus.DONE)
+        )
+        advisorName = "Ocampo Vargas Ricardo Naul"
+    }
 
     val todoTasks
         get() = tasks.filter { it.status == TaskStatus.TODO }
@@ -20,4 +36,18 @@ class DashboardViewModel : ViewModel() {
 
     val doneTasks
         get() = tasks.filter { it.status == TaskStatus.DONE }
+
+
+    fun moveTask(taskId: Int, newStatus: TaskStatus) {
+        tasks = tasks.map { task ->
+            if (task.id == taskId) {
+                task.copy(status = newStatus)
+            } else {
+                task
+            }
+        }
+    }
+
+
+
 }
