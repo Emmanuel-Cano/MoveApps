@@ -1,5 +1,10 @@
 package mx.edu.utez.moveapp.ui.screens
 
+import android.net.Uri
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.launch
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,14 +17,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -31,82 +35,113 @@ import mx.edu.utez.moveapp.data.model.TaskStatus
 import mx.edu.utez.moveapp.viewmodel.DashboardViewModel
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel) {
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFBCBCBC))) {
-        TopBar()
-        HeaderUser(viewModel.advisorName)
-        KanbanBoard(viewModel)
+    var selectedTask by remember { mutableStateOf<Task?>(null) }
+    var showSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+        if (bitmap != null) { /* Foto capturada */ }
+        showSheet = false
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) cameraLauncher.launch()
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        showSheet = false
+    }
+
+    val fileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        showSheet = false
+    }
+
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFBCBCBC))) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            TopBar()
+            HeaderUser(viewModel.advisorName)
+            KanbanBoard(viewModel, onTaskClick = { selectedTask = it })
+        }
+
+        selectedTask?.let { task ->
+            TaskDetailDialog(
+                task = task,
+                onDismiss = { selectedTask = null },
+                onAddFileClick = { showSheet = true }
+            )
+        }
+
+        if (showSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showSheet = false },
+                sheetState = sheetState,
+                containerColor = Color.White
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 40.dp)) {
+                    Text("Adjuntar", fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(vertical = 16.dp))
+
+                    AttachmentOption(Icons.Default.AddAPhoto, "Tomar foto") {
+                        permissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
+                    AttachmentOption(Icons.Default.Collections, "Seleccionar foto") {
+                        galleryLauncher.launch("image/*")
+                    }
+                    AttachmentOption(Icons.Default.Description, "Subir archivo") {
+                        fileLauncher.launch("*/*")
+                    }
+                }
+            }
+        }
     }
 }
 
 @Composable
-fun KanbanBoard(viewModel: DashboardViewModel) {
-    var selectedTask by remember { mutableStateOf<Task?>(null) }
+fun AttachmentOption(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = Color.Black, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.width(16.dp))
+        Text(label, fontSize = 16.sp, color = Color.Black)
+    }
+}
 
+@Composable
+fun KanbanBoard(viewModel: DashboardViewModel, onTaskClick: (Task) -> Unit) {
     LazyRow(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            KanbanColumn("Por Hacer", viewModel.todoTasks,
-                onTaskClick = { selectedTask = it },
-                onDragTask = { task, dragX ->
-                    if (dragX > 250f) viewModel.moveTask(task.id, TaskStatus.IN_PROGRESS)
-                }
-            )
+            KanbanColumn("Por Hacer", viewModel.todoTasks, onTaskClick,
+                onDrag = { t, x -> if (x > 250f) viewModel.moveTask(t.id, TaskStatus.IN_PROGRESS) })
         }
         item {
-            KanbanColumn("En Progreso", viewModel.progressTasks,
-                onTaskClick = { selectedTask = it },
-                onDragTask = { task, dragX ->
-                    if (dragX > 250f) viewModel.moveTask(task.id, TaskStatus.DONE)
-                    if (dragX < -250f) viewModel.moveTask(task.id, TaskStatus.TODO)
-                }
-            )
+            KanbanColumn("En Progreso", viewModel.progressTasks, onTaskClick,
+                onDrag = { t, x ->
+                    if (x > 250f) viewModel.moveTask(t.id, TaskStatus.DONE)
+                    if (x < -250f) viewModel.moveTask(t.id, TaskStatus.TODO)
+                })
         }
         item {
-            KanbanColumn("Finalizado", viewModel.doneTasks,
-                onTaskClick = { selectedTask = it },
-                onDragTask = { task, dragX ->
-                    if (dragX < -250f) viewModel.moveTask(task.id, TaskStatus.IN_PROGRESS)
-                }
-            )
+            KanbanColumn("Finalizado", viewModel.doneTasks, onTaskClick,
+                onDrag = { t, x -> if (x < -250f) viewModel.moveTask(t.id, TaskStatus.IN_PROGRESS) })
         }
-    }
-
-    selectedTask?.let { task ->
-        TaskDetailDialog(
-            task = task,
-            onDismiss = { selectedTask = null },
-            onMove = { id, newStatus -> viewModel.moveTask(id, newStatus) }
-        )
     }
 }
 
 @Composable
-fun KanbanColumn(
-    title: String,
-    tasks: List<Task>,
-    onTaskClick: (Task) -> Unit,
-    onDragTask: (Task, Float) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .width(300.dp)
-            .fillMaxHeight()
-            .background(Color(0xFFD9D9D9), RoundedCornerShape(20.dp))
-            .padding(12.dp)
-    ) {
+fun KanbanColumn(title: String, tasks: List<Task>, onTaskClick: (Task) -> Unit, onDrag: (Task, Float) -> Unit) {
+    Column(modifier = Modifier.width(300.dp).fillMaxHeight().background(Color(0xFFD9D9D9), RoundedCornerShape(20.dp)).padding(12.dp)) {
         Text(title, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 12.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(tasks, key = { it.id }) { task ->
-                DraggableTaskCard(
-                    task = task,
-                    onClick = { onTaskClick(task) },
-                    onDragEnd = { x -> onDragTask(task, x) }
-                )
+                DraggableTaskCard(task, onClick = { onTaskClick(task) }, onDragEnd = { onDrag(task, it) })
             }
         }
     }
@@ -120,47 +155,22 @@ fun DraggableTaskCard(task: Task, onClick: () -> Unit, onDragEnd: (Float) -> Uni
     val elevation by animateFloatAsState(if (isDragging) 8f else 2f)
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = Modifier.fillMaxWidth()
             .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { isDragging = true },
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        offsetX += dragAmount.x
-                        offsetY += dragAmount.y
-                    },
-                    onDragEnd = {
-                        isDragging = false
-                        onDragEnd(offsetX)
-                        offsetX = 0f
-                        offsetY = 0f
-                    },
-                    onDragCancel = {
-                        isDragging = false
-                        offsetX = 0f
-                        offsetY = 0f
-                    }
+                    onDrag = { change, drag -> change.consume(); offsetX += drag.x; offsetY += drag.y },
+                    onDragEnd = { isDragging = false; onDragEnd(offsetX); offsetX = 0f; offsetY = 0f },
+                    onDragCancel = { isDragging = false; offsetX = 0f; offsetY = 0f }
                 )
-            }
-            .clickable { onClick() },
+            }.clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = elevation.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Box(
-                modifier = Modifier.width(35.dp).height(4.dp)
-                    .background(
-                        color = when(task.status) {
-                            TaskStatus.TODO -> Color(0xFFE57373)
-                            TaskStatus.IN_PROGRESS -> Color(0xFF64B5F6)
-                            else -> Color(0xFF81C784)
-                        },
-                        shape = RoundedCornerShape(2.dp)
-                    )
-            )
+            Box(Modifier.width(35.dp).height(4.dp).background(if(task.status == TaskStatus.TODO) Color(0xFFE57373) else if(task.status == TaskStatus.IN_PROGRESS) Color(0xFF64B5F6) else Color(0xFF81C784), RoundedCornerShape(2.dp)))
             Spacer(Modifier.height(8.dp))
             Text(task.title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             Text(task.description, fontSize = 12.sp, color = Color.Gray, maxLines = 2)
@@ -168,47 +178,62 @@ fun DraggableTaskCard(task: Task, onClick: () -> Unit, onDragEnd: (Float) -> Uni
     }
 }
 
+@Composable
+fun TaskDetailDialog(task: Task, onDismiss: () -> Unit, onAddFileClick: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = RoundedCornerShape(28.dp), color = Color.White, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text("Información de la tarea", fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                Spacer(Modifier.height(12.dp))
+                Text(task.title, fontSize = 16.sp, color = Color.DarkGray)
+                Spacer(Modifier.height(20.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    DateBox("02/03/2026", Modifier.weight(1f))
+                    DateBox("30/03/2026", Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(16.dp))
+                Text("Notas", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Box(Modifier.fillMaxWidth().heightIn(min = 100.dp).border(1.dp, Color.Gray, RoundedCornerShape(12.dp)).padding(12.dp)) {
+                    Text(task.description, fontSize = 13.sp)
+                }
+                Spacer(Modifier.height(24.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(onClick = { /* Acción Comentario */ }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color.Black)) {
+                        Text("Comentar", fontSize = 11.sp)
+                    }
+                    Button(onClick = onAddFileClick, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color.Black)) {
+                        Text("Añadir archivo", fontSize = 11.sp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DateBox(date: String, modifier: Modifier = Modifier) {
+    Row(modifier = modifier.border(1.dp, Color.Gray, RoundedCornerShape(8.dp)).padding(8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(date, fontSize = 11.sp)
+        Icon(Icons.Default.DateRange, null, Modifier.size(14.dp), tint = Color.Gray)
+    }
+}
 
 @Composable
 fun TopBar() {
-    Row(
-        modifier = Modifier.fillMaxWidth().background(Color.Black).padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Row(Modifier.fillMaxWidth().background(Color.Black).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Text("MOVE", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
+        Spacer(Modifier.weight(1f))
+        Icon(Icons.Default.Notifications, null, tint = Color.White, modifier = Modifier.clickable { /* TODO */ })
         Spacer(Modifier.width(16.dp))
-        TextField(value = "", onValueChange = {}, placeholder = { Text("Buscar") }, modifier = Modifier.weight(1f).height(48.dp), shape = RoundedCornerShape(24.dp))
-        Spacer(Modifier.width(8.dp))
-        Icon(Icons.Default.Notifications, null, tint = Color.White)
-        Spacer(Modifier.width(8.dp))
-        Icon(Icons.Default.Menu, null, tint = Color.White)
+        Icon(Icons.Default.Menu, null, tint = Color.White, modifier = Modifier.clickable { /* TODO */ })
     }
 }
 
 @Composable
 fun HeaderUser(name: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(40.dp).background(Color.LightGray, CircleShape))
         Spacer(Modifier.width(10.dp))
-        Text("Asesor: $name")
-    }
-}
-
-@Composable
-fun TaskDetailDialog(task: Task, onDismiss: () -> Unit, onMove: (Int, TaskStatus) -> Unit) {
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = RoundedCornerShape(28.dp), color = Color.White, modifier = Modifier.padding(16.dp)) {
-            Column(Modifier.padding(20.dp)) {
-                Text("Detalles", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Text(task.title)
-                Spacer(Modifier.height(16.dp))
-                Button(onClick = { onMove(task.id, TaskStatus.DONE); onDismiss() }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Finalizar Tarea")
-                }
-                TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                    Text("Cerrar")
-                }
-            }
-        }
+        Text("Asesor: $name", fontWeight = FontWeight.Medium)
     }
 }

@@ -43,11 +43,9 @@ android {
 
 dependencies {
 
-    // Retrofit
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
-// Convertidor JSON (Gson)
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-// Opcional pero recomendado (logs de red)
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
