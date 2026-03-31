@@ -1,5 +1,6 @@
 package mx.edu.utez.moveapp.data.network
 
+import mx.edu.utez.moveapp.data.model.Task
 import mx.edu.utez.moveapp.data.request.AddPasswordRequest
 import mx.edu.utez.moveapp.data.request.ChangePasswordRequest
 import mx.edu.utez.moveapp.data.request.LoginRequest
@@ -20,6 +21,7 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
@@ -44,5 +46,9 @@ interface ApiService {
     @PUT("api/student/updateName") suspend fun updateStudentName(@Body request: UpdateNameRequest): Response<SuccessResponse>
 
     @Multipart @POST("api/student/uploadLogo") suspend fun uploadLogo(@Part file: MultipartBody.Part): Response<SuccessResponse>
+
+    @GET("api/student/tasks/{boardID}") suspend fun getTasksByAdviser(@Path("boardID") adviserId: Int): Response<List<Task>>
+
+    @GET("api/student/advisers") suspend fun getAdvisers(): Response<List<AdviserResponse>>
 
 }

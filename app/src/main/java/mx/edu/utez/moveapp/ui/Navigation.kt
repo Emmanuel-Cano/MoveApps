@@ -32,7 +32,7 @@ fun Navigation() {
             LoginUserScreen(
                 loginViewModel,
                 navController,
-                onLoginSuccess = { token ->
+                onLoginSuccess = {
                     navController.navigate("advisers") {
                         popUpTo("login") { inclusive = true }
                     }
@@ -52,7 +52,7 @@ fun Navigation() {
             VerifyCodeScreen(
                 loginViewModel,
                 navController,
-                onLoginSuccess = { /* Manejar éxito de verificación */ }
+                onLoginSuccess = { }
             )
         }
 
@@ -81,27 +81,26 @@ fun Navigation() {
         }
 
         composable(
-            route = "dashboard/{token}/{adviserId}",
+            route = "dashboard/{adviserId}/{adviserName}",
             arguments = listOf(
-                navArgument("token") { type = NavType.StringType },
-                navArgument("adviserId") { type = NavType.IntType }
+                navArgument("adviserId") { type = NavType.IntType },
+                navArgument("adviserName") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val token = backStackEntry.arguments?.getString("token") ?: ""
-            val adviserId = backStackEntry.arguments?.getInt("adviserId") ?: 0
+            val id = backStackEntry.arguments?.getInt("adviserId") ?: 0
+            val name = backStackEntry.arguments?.getString("adviserName") ?: "Asesor"
 
             DashboardScreen(
                 viewModel = dashboardViewModel,
                 navController = navController,
-                token = token,
-                adviserId = adviserId
+                token = "tu_token",
+                adviserId = id,
+                adviserName = name
             )
         }
 
         composable("settings") {
             val settingsViewModel: SettingsViewModel = viewModel()
-            val loginViewModel: LoginViewModel = viewModel()
-
             SettingsScreen(
                 viewModel = settingsViewModel,
                 loginViewModel = loginViewModel,

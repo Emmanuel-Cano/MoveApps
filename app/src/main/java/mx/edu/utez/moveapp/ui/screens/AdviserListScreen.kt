@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -20,9 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import mx.edu.utez.moveapp.data.response.SessionManager
 import mx.edu.utez.moveapp.viewmodel.AdviserViewModel
-import mx.edu.utez.moveapp.R
 
 @Composable
 fun AdviserListScreen(viewModel: AdviserViewModel, navController: NavController) {
@@ -31,10 +28,9 @@ fun AdviserListScreen(viewModel: AdviserViewModel, navController: NavController)
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
-        TopBar(
-            onMenuClick = {  },
-            onNotificationsClick = { navController.navigate("notifications") }
-        )
+        Box(Modifier.fillMaxWidth().background(Color.Black).padding(16.dp)) {
+            Text("Selecciona tu Asesor", color = Color.White, fontWeight = FontWeight.Bold)
+        }
 
         Box(
             modifier = Modifier
@@ -54,8 +50,14 @@ fun AdviserListScreen(viewModel: AdviserViewModel, navController: NavController)
                         AdviserCard(
                             name = adviser.name,
                             onIngresarClick = {
-                                val token = SessionManager.token ?: ""
-                                navController.navigate("dashboard/$token/${adviser.id}")
+                                val idFinal = when {
+                                    adviser.name.contains("Carlos", true) -> 1L
+                                    adviser.name.contains("Omar", true) -> 2L
+                                    adviser.name.contains("Nuevo", true) -> 3L
+                                    else -> 2L
+                                }
+
+                                navController.navigate("dashboard/$idFinal/${adviser.name}")
                             }
                         )
                     }
@@ -70,7 +72,8 @@ fun AdviserCard(name: String, onIngresarClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -107,7 +110,8 @@ fun AdviserCard(name: String, onIngresarClick: () -> Unit) {
                     text = name,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    color = Color.Black
                 )
             }
 

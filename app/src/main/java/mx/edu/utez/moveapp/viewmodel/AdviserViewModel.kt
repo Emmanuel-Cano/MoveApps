@@ -1,36 +1,32 @@
 package mx.edu.utez.moveapp.viewmodel
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import mx.edu.utez.moveapp.data.network.RetrofitInstance
-import mx.edu.utez.moveapp.data.repository.AdviserRepository
-import mx.edu.utez.moveapp.data.response.AdviserResponse
-import mx.edu.utez.moveapp.data.response.SessionManager
+import mx.edu.utez.moveapp.data.response.AdviserResponse // <--- IMPORTANTE
 
 class AdviserViewModel : ViewModel() {
-    private val repository = AdviserRepository()
-    var advisers by mutableStateOf<List<AdviserResponse>>(emptyList())
-        private set
-
+    var advisers by mutableStateOf(listOf<AdviserResponse>())
     var isLoading by mutableStateOf(false)
 
     fun loadAdvisers() {
         viewModelScope.launch {
             isLoading = true
             try {
-                val tokenHeader = "Bearer ${SessionManager.token}"
-                val response = RetrofitInstance.api.getAdvisers(tokenHeader)
-
+                val response = RetrofitInstance.api.getAdvisers()
                 if (response.isSuccessful) {
                     advisers = response.body() ?: emptyList()
                     println("Asesores cargados: ${advisers.size}")
-                } else {
-                    println("Error del servidor: ${response.code()}")
+                    advisers.forEach {
+                        println("DEBUG_DATA: Nombre: ${it.name}, ID real: ${it.id}")
+                    }
                 }
             } catch (e: Exception) {
-                println("Error de red: ${e.message}")
+                e.printStackTrace()
             } finally {
                 isLoading = false
             }
