@@ -37,10 +37,10 @@ val LightText = Color.White
 
 @Composable
 fun LoginUserScreen(viewModel: LoginViewModel, navController: NavController,
-                    onLoginSuccess: () -> Unit){
+                    onLoginSuccess: (String) -> Unit){
     LaunchedEffect(viewModel.goToHome) {
         if (viewModel.goToHome) {
-            onLoginSuccess()
+            onLoginSuccess(viewModel.userToken ?: "")
         }
     }
     Box(

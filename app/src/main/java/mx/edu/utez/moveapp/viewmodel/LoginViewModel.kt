@@ -11,6 +11,7 @@ import mx.edu.utez.moveapp.data.request.AddPasswordRequest
 import mx.edu.utez.moveapp.data.request.LoginRequest
 import mx.edu.utez.moveapp.data.request.StudentRequest
 import mx.edu.utez.moveapp.data.request.ValidateCodeRequest
+import mx.edu.utez.moveapp.data.response.SessionManager
 
 class LoginViewModel : ViewModel() {
 
@@ -150,8 +151,10 @@ class LoginViewModel : ViewModel() {
             errorMessage = "Ingresa correo y contraseña"
             return
         }
+
         isLoading = true
         errorMessage = null
+
         viewModelScope.launch {
             try {
 
@@ -161,18 +164,22 @@ class LoginViewModel : ViewModel() {
 
                 if (response.isSuccessful) {
 
-                    userToken = response.body()?.token
+                    val tokenResponse = response.body()?.token ?: ""
+
+                    userToken = tokenResponse
+                    SessionManager.token = tokenResponse
+
                     goToHome = true
 
                 } else {
-
-                    errorMessage =
-                        "Error"
+                    errorMessage = "Error en login"
                 }
+
             } catch (e: Exception) {
                 e.printStackTrace()
                 errorMessage = e.message ?: "Error desconocido"
             }
+
             isLoading = false
         }
     }

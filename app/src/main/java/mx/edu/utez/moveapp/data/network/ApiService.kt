@@ -4,13 +4,22 @@ import mx.edu.utez.moveapp.data.request.AddPasswordRequest
 import mx.edu.utez.moveapp.data.request.ChangePasswordRequest
 import mx.edu.utez.moveapp.data.request.LoginRequest
 import mx.edu.utez.moveapp.data.request.StudentRequest
+import mx.edu.utez.moveapp.data.request.UpdateNameRequest
 import mx.edu.utez.moveapp.data.request.ValidateCodeRequest
+import mx.edu.utez.moveapp.data.response.AdviserResponse
 import mx.edu.utez.moveapp.data.response.LoginResponse
+import mx.edu.utez.moveapp.data.response.StudentProfileResponse
 import mx.edu.utez.moveapp.data.response.SuccessResponse
 import mx.edu.utez.moveapp.data.response.ValidateCodeResponse
+import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.Query
 
 interface ApiService {
@@ -26,4 +35,14 @@ interface ApiService {
     @POST("api/student") suspend fun saveStudentInformation(@Body request: StudentRequest): Response<Unit>
 
     @POST("api/user/changePassword") suspend fun changePassword(@Query("email") email: String): Response<SuccessResponse>
+
+    @GET("api/student/advisers") suspend fun getAdvisers(@Header("Authorization") token: String): Response<List<AdviserResponse>>
+
+    @GET("api/student/profile") suspend fun getStudentProfile(): Response<StudentProfileResponse>
+
+
+    @PUT("api/student/updateName") suspend fun updateStudentName(@Body request: UpdateNameRequest): Response<SuccessResponse>
+
+    @Multipart @POST("api/student/uploadLogo") suspend fun uploadLogo(@Part file: MultipartBody.Part): Response<SuccessResponse>
+
 }

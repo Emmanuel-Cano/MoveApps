@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.launch
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,47 +26,69 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.navigation.NavController
 import mx.edu.utez.moveapp.data.model.Task
 import mx.edu.utez.moveapp.data.model.TaskStatus
 import mx.edu.utez.moveapp.viewmodel.DashboardViewModel
 import kotlin.math.roundToInt
+import mx.edu.utez.moveapp.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen(viewModel: DashboardViewModel) {
+fun DashboardScreen(
+    viewModel: DashboardViewModel,
+    navController: NavController,
+    token: String,
+    adviserId: Int? = null
+
+) {
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     var showSheet by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) } // Estado para el diálogo del menú
+
     val sheetState = rememberModalBottomSheetState()
 
-    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-        if (bitmap != null) { /* Foto capturada */ }
+    // --- Launchers para Evidencia ---
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) {
         showSheet = false
     }
-
-    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        if (isGranted) cameraLauncher.launch()
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) cameraLauncher.launch()
     }
-
-    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         showSheet = false
     }
-
-    val fileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+    val fileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         showSheet = false
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFFBCBCBC))) {
         Column(modifier = Modifier.fillMaxSize()) {
-            TopBar()
+            TopBar(
+                onMenuClick = { showMenu = true },
+                onNotificationsClick = { navController.navigate("notifications") }
+            )
             HeaderUser(viewModel.advisorName)
             KanbanBoard(viewModel, onTaskClick = { selectedTask = it })
         }
 
+        if (showMenu) {
+            CustomMenuDialog(
+                onDismiss = { showMenu = false },
+                onNavigate = { route ->
+                    showMenu = false
+                    navController.navigate(route)
+                }
+            )
+        }
+
+        // dettalle de tarea
         selectedTask?.let { task ->
             TaskDetailDialog(
                 task = task,
@@ -74,6 +97,7 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
             )
         }
 
+        // boton para adjuntar
         if (showSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showSheet = false },
@@ -82,7 +106,6 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
             ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 40.dp)) {
                     Text("Adjuntar", fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(vertical = 16.dp))
-
                     AttachmentOption(Icons.Default.AddAPhoto, "Tomar foto") {
                         permissionLauncher.launch(Manifest.permission.CAMERA)
                     }
@@ -98,15 +121,80 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
     }
 }
 
+// componentes del menu
+
 @Composable
-fun AttachmentOption(icon: ImageVector, label: String, onClick: () -> Unit) {
+fun CustomMenuDialog(onDismiss: () -> Unit, onNavigate: (String) -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = Color.White,
+            modifier = Modifier.width(300.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                MenuButton("Cambiar tablero") { onNavigate("advisers") }
+                MenuButton("Configuración") { onNavigate("settings") }
+                MenuButton("Salir") {
+                    onNavigate("login")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MenuButton(text: String, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().height(56.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+        shape = RoundedCornerShape(28.dp)
+    ) {
+        Text(text, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+// UI compnentes (topbar, header, kanban)
+
+@Composable
+fun TopBar(onMenuClick: () -> Unit, onNotificationsClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 12.dp),
+        Modifier.fillMaxWidth().background(Color.Black).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = Color.Black, modifier = Modifier.size(24.dp))
-        Spacer(Modifier.width(16.dp))
-        Text(label, fontSize = 16.sp, color = Color.Black)
+        Image(
+            painter = painterResource(id = R.drawable.move),
+            contentDescription = "Logo MOVE",
+            modifier = Modifier
+                .size(45.dp)
+                .clickable {  }
+        )
+        Spacer(Modifier.weight(1f))
+        Icon(
+            Icons.Default.Notifications,
+            contentDescription = "Notificaciones",
+            tint = Color.White,
+            modifier = Modifier.clickable { onNotificationsClick() }.padding(end = 16.dp)
+        )
+        Icon(
+            Icons.Default.Menu,
+            contentDescription = "Menú",
+            tint = Color.White,
+            modifier = Modifier.clickable { onMenuClick() }
+        )
+    }
+}
+
+@Composable
+fun HeaderUser(name: String) {
+    Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(40.dp).background(Color.LightGray, CircleShape))
+        Spacer(Modifier.width(10.dp))
+        Text("Asesor: $name", fontWeight = FontWeight.Medium)
     }
 }
 
@@ -137,8 +225,15 @@ fun KanbanBoard(viewModel: DashboardViewModel, onTaskClick: (Task) -> Unit) {
 
 @Composable
 fun KanbanColumn(title: String, tasks: List<Task>, onTaskClick: (Task) -> Unit, onDrag: (Task, Float) -> Unit) {
-    Column(modifier = Modifier.width(300.dp).fillMaxHeight().background(Color(0xFFD9D9D9), RoundedCornerShape(20.dp)).padding(12.dp)) {
-        Text(title, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 12.dp))
+    Column(modifier = Modifier.width(300.dp)
+        .fillMaxHeight()
+        .background(Color(0xFFD9D9D9),
+            RoundedCornerShape(20.dp))
+        .padding(12.dp)) {
+        Text(title,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .padding(bottom = 12.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(tasks, key = { it.id }) { task ->
                 DraggableTaskCard(task, onClick = { onTaskClick(task) }, onDragEnd = { onDrag(task, it) })
@@ -170,7 +265,12 @@ fun DraggableTaskCard(task: Task, onClick: () -> Unit, onDragEnd: (Float) -> Uni
         elevation = CardDefaults.cardElevation(defaultElevation = elevation.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Box(Modifier.width(35.dp).height(4.dp).background(if(task.status == TaskStatus.TODO) Color(0xFFE57373) else if(task.status == TaskStatus.IN_PROGRESS) Color(0xFF64B5F6) else Color(0xFF81C784), RoundedCornerShape(2.dp)))
+            Box(Modifier.width(35.dp).height(4.dp).background(
+                when(task.status) {
+                    TaskStatus.TODO -> Color(0xFFE57373)
+                    TaskStatus.IN_PROGRESS -> Color(0xFF64B5F6)
+                    TaskStatus.DONE -> Color(0xFF81C784)
+                }, RoundedCornerShape(2.dp)))
             Spacer(Modifier.height(8.dp))
             Text(task.title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             Text(task.description, fontSize = 12.sp, color = Color.Gray, maxLines = 2)
@@ -198,8 +298,8 @@ fun TaskDetailDialog(task: Task, onDismiss: () -> Unit, onAddFileClick: () -> Un
                 }
                 Spacer(Modifier.height(24.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(onClick = { /* Acción Comentario */ }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color.Black)) {
-                        Text("Comentar", fontSize = 11.sp)
+                    Button(onClick = {  }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color.Black)) {
+                        Text("Añadir comentario", fontSize = 11.sp)
                     }
                     Button(onClick = onAddFileClick, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Color.Black)) {
                         Text("Añadir archivo", fontSize = 11.sp)
@@ -219,21 +319,13 @@ fun DateBox(date: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun TopBar() {
-    Row(Modifier.fillMaxWidth().background(Color.Black).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("MOVE", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
-        Spacer(Modifier.weight(1f))
-        Icon(Icons.Default.Notifications, null, tint = Color.White, modifier = Modifier.clickable { /* TODO */ })
+fun AttachmentOption(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = Color.Black, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(16.dp))
-        Icon(Icons.Default.Menu, null, tint = Color.White, modifier = Modifier.clickable { /* TODO */ })
-    }
-}
-
-@Composable
-fun HeaderUser(name: String) {
-    Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(40.dp).background(Color.LightGray, CircleShape))
-        Spacer(Modifier.width(10.dp))
-        Text("Asesor: $name", fontWeight = FontWeight.Medium)
+        Text(label, fontSize = 16.sp, color = Color.Black)
     }
 }

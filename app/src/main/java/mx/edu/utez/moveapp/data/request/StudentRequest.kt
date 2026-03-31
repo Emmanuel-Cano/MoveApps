@@ -6,6 +6,6 @@ data class StudentRequest(
     val lastname: String,
     val gender: String,
     val email: String,
-    val image: String? = null
+    val logo: String? = null
 
 )
