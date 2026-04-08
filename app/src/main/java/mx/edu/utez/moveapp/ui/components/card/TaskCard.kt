@@ -20,26 +20,25 @@ fun TaskCard(task: Task, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp) // Un pequeño respiro entre tarjetas
+            .padding(vertical = 4.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            // Indicador de color dinámico basado en el String del status
             Box(
                 modifier = Modifier
                     .width(40.dp)
                     .height(6.dp)
                     .background(
                         color = when {
-                            task.status.equals("TODO", ignoreCase = true) -> Color(0xFFE57373) // Rojo/Rosa
+                            task.status.equals("TODO", ignoreCase = true) -> Color(0xFFE57373)
                             task.status.equals("IN_PROGRESS", ignoreCase = true) ||
-                                    task.status.contains("PROGRESO", ignoreCase = true) -> Color(0xFF64B5F6) // Azul
+                                    task.status.contains("PROGRESO", ignoreCase = true) -> Color(0xFF64B5F6)
                             task.status.equals("DONE", ignoreCase = true) ||
-                                    task.status.contains("FINALIZADO", ignoreCase = true) -> Color(0xFF81C784) // Verde
-                            else -> Color.LightGray // Color por si el status es desconocido
+                                    task.status.contains("FINALIZADO", ignoreCase = true) -> Color(0xFF81C784)
+                            else -> Color.LightGray
                         },
                         shape = RoundedCornerShape(3.dp)
                     )

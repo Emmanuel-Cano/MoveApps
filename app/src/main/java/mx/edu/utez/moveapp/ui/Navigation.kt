@@ -65,10 +65,14 @@ fun Navigation() {
         }
 
         composable("recoveryPassword") {
-            RecoveryPasswordScreen(
-                loginViewModel,
-                navController,
-                onLoginSuccess = { navController.navigate("loginUser") }
+            ChangePasswordScreen(
+                viewModel = loginViewModel,
+                navController = navController,
+                onLoginSuccess = {
+                    navController.navigate("settings") {
+                        popUpTo("settings") { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -109,7 +113,7 @@ fun Navigation() {
         }
 
         composable("notifications") {
-            // NotificationsScreen(navController)
+             NotificationsScreen(navController)
         }
     }
 }

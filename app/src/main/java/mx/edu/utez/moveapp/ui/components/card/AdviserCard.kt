@@ -47,7 +47,6 @@ fun AdviserCard(name: String, onIngresarClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(vertical = 8.dp)
             ) {
-                // Ícono circular de perfil
                 Surface(
                     shape = CircleShape,
                     border = BorderStroke(1.dp, Color.Black),
@@ -67,7 +66,6 @@ fun AdviserCard(name: String, onIngresarClick: () -> Unit) {
                     modifier = Modifier.weight(1f)
                 )
             }
-            // Botón Ingresar alineado a la derecha
             Button(
                 onClick = onIngresarClick,
                 modifier = Modifier.align(Alignment.End),

@@ -26,8 +26,6 @@ fun VerifyCodeScreen(
     navController: NavController,
     onLoginSuccess: () -> Unit
 ) {
-
-
     var code by remember { mutableStateOf("") }
 
     LaunchedEffect(viewModel.goToCreatePassword) {
@@ -38,7 +36,7 @@ fun VerifyCodeScreen(
             if(viewModel.authMode == "RECOVERY"){
                 navController.navigate("recoveryPassword")
             }
-
+            viewModel.goToCreatePassword = false
         }
     }
 
@@ -49,7 +47,6 @@ fun VerifyCodeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-
         Title("Verificar código")
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -81,9 +78,11 @@ fun VerifyCodeScreen(
         Spacer(modifier = Modifier.height(20.dp))
 
         TextButton(
-            onClick = { navController.navigate("login") }
+            onClick = {
+                navController.popBackStack()
+            }
         ) {
-            Text("Iniciar sesión")
+            Text("Cancelar", color = Color.Black)
         }
     }
 }
