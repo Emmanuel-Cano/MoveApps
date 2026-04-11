@@ -13,6 +13,7 @@ import mx.edu.utez.moveapp.data.response.StudentProfileResponse
 import mx.edu.utez.moveapp.data.response.SuccessResponse
 import mx.edu.utez.moveapp.data.response.ValidateCodeResponse
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -49,6 +50,13 @@ interface ApiService {
 
     @GET("api/student/tasks/{boardID}") suspend fun getTasksByAdviser(@Path("boardID") adviserId: Int): Response<List<Task>>
 
-    @GET("api/student/advisers") suspend fun getAdvisers(): Response<List<AdviserResponse>>
+    @Multipart
+    @POST("api/student/submitEvidence")
+    suspend fun submitEvidence(
+        @Part("taskID") taskID: RequestBody,
+        @Part("comment") comment: RequestBody,
+        @Part files: List<MultipartBody.Part>
+    ): Response<SuccessResponse>
+
 
 }

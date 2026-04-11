@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import mx.edu.utez.moveapp.data.network.RetrofitInstance
 import mx.edu.utez.moveapp.data.response.AdviserResponse // <--- IMPORTANTE
+import mx.edu.utez.moveapp.data.response.SessionManager
 
 class AdviserViewModel : ViewModel() {
     var advisers by mutableStateOf(listOf<AdviserResponse>())
@@ -17,7 +18,10 @@ class AdviserViewModel : ViewModel() {
         viewModelScope.launch {
             isLoading = true
             try {
-                val response = RetrofitInstance.api.getAdvisers()
+                val response = RetrofitInstance.api.getAdvisers(
+                    "Bearer ${SessionManager.token}"
+                )
+                println("DEBUG_TOKEN: ${mx.edu.utez.moveapp.data.response.SessionManager.token}")
                 if (response.isSuccessful) {
                     advisers = response.body() ?: emptyList()
                     println("Asesores cargados: ${advisers.size}")

@@ -51,7 +51,7 @@ fun AdviserListScreen(viewModel: AdviserViewModel, navController: NavController)
                             name = adviser.name,
                             onIngresarClick = {
                                 val idFinal = when {
-                                    adviser.name.contains("Carlos", true) -> 1L
+                                    adviser.name.contains("Getsai", true) -> 1L
                                     adviser.name.contains("Omar", true) -> 2L
                                     adviser.name.contains("Getsa", true) -> 3L
                                     adviser.name.contains("Nuevo", true) -> 4L

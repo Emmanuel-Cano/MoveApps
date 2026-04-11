@@ -5,5 +5,5 @@ data class LoginResponse(
 )
 
 object SessionManager {
-    var token: String? = ""
+    var token: String? = null
 }

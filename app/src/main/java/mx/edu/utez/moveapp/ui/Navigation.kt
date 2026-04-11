@@ -96,8 +96,9 @@ fun Navigation() {
 
             DashboardScreen(
                 viewModel = dashboardViewModel,
+                loginViewModel = loginViewModel,
                 navController = navController,
-                token = "tu_token",
+                token = loginViewModel.userToken ?: "",
                 adviserId = id,
                 adviserName = name
             )

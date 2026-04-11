@@ -194,5 +194,6 @@ class LoginViewModel : ViewModel() {
         goToVerifyCode = false
         goToCreatePassword = false
         goToHome = false
+        SessionManager.token = ""
     }
 }

@@ -1,6 +1,7 @@
 package mx.edu.utez.moveapp.ui.screens
 
 import android.Manifest
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
@@ -36,17 +37,19 @@ import mx.edu.utez.moveapp.data.model.TaskStatus
 import mx.edu.utez.moveapp.viewmodel.DashboardViewModel
 import kotlin.math.roundToInt
 import mx.edu.utez.moveapp.R
+import androidx.compose.ui.platform.LocalContext
+import mx.edu.utez.moveapp.viewmodel.LoginViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel,
+    loginViewModel: LoginViewModel,
     navController: NavController,
     token: String,
     adviserId: Int? = null,
     adviserName: String?
 ) {
-    // Carga de datos real usando el nombre que viene de la navegación
     LaunchedEffect(adviserId) {
         viewModel.loadData(adviserId, adviserName)
     }
@@ -54,16 +57,27 @@ fun DashboardScreen(
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     var showSheet by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
+    var selectedUri by remember { mutableStateOf<Uri?>(null) }
+    var evidenceComment by remember { mutableStateOf("") }
 
     val sheetState = rememberModalBottomSheetState()
+    val context = LocalContext.current
 
-    // Launchers para archivos y cámara
-    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { showSheet = false }
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+        showSheet = false
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) cameraLauncher.launch(null)
     }
-    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { showSheet = false }
-    val fileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { showSheet = false }
+
+    // Documentos y fotos
+    val fileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            selectedUri = it
+        }
+        showSheet = false
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFFBCBCBC))) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -81,32 +95,55 @@ fun DashboardScreen(
             } else {
                 KanbanBoard(
                     viewModel = viewModel,
-                    onTaskClick = { selectedTask = it }
+                    onTaskClick = {
+                        selectedTask = it
+                        selectedUri = null
+                        evidenceComment = ""
+                    }
                 )
             }
         }
 
-        // Diálogo de menú lateral/configuración
         if (showMenu) {
             CustomMenuDialog(
                 onDismiss = { showMenu = false },
                 onNavigate = { route ->
                     showMenu = false
                     navController.navigate(route)
+                },
+                onLogout = {
+                    showMenu = false
+                    loginViewModel.clearSession()
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             )
         }
 
-        // DIÁLOGO DE DETALLE (PROTOTIPO)
         selectedTask?.let { task ->
             TaskDetailDialog(
                 task = task,
+                commentValue = evidenceComment,
+                onCommentChange = { evidenceComment = it },
                 onDismiss = { selectedTask = null },
-                onAddFileClick = { showSheet = true } // Abrir el ModalBottomSheet
+                onAddFileClick = { showSheet = true },
+                selectedUri = selectedUri,
+                onSendClick = {
+                    selectedUri?.let { uri ->
+                        viewModel.uploadEvidence(
+                            task.id,
+                            evidenceComment.ifBlank { "Sin comentario" },
+                            uri,
+                            context
+                        )
+                        selectedTask = null
+                    }
+                }
             )
         }
 
-        // MENÚ DE ADJUNTAR ARCHIVOS
+
         if (showSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showSheet = false },
@@ -118,10 +155,7 @@ fun DashboardScreen(
                     AttachmentOption(Icons.Default.AddAPhoto, "Tomar foto") {
                         permissionLauncher.launch(Manifest.permission.CAMERA)
                     }
-                    AttachmentOption(Icons.Default.Collections, "Seleccionar foto") {
-                        galleryLauncher.launch("image/*")
-                    }
-                    AttachmentOption(Icons.Default.Description, "Subir archivo") {
+                    AttachmentOption(Icons.Default.Collections, "Seleccionar foto / archivo") {
                         fileLauncher.launch("*/*")
                     }
                 }
@@ -129,6 +163,80 @@ fun DashboardScreen(
         }
     }
 }
+
+@Composable
+fun TaskDetailDialog(
+    task: Task,
+    commentValue: String,
+    onCommentChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onAddFileClick: () -> Unit,
+    selectedUri: Uri?,
+    onSendClick: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(40.dp),
+            color = Color.White,
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        ) {
+            Box(modifier = Modifier.padding(24.dp)) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Información de la tarea", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.Black)
+                    Text(task.title, fontSize = 14.sp, color = Color.DarkGray, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
+
+                    Text("Descripción", modifier = Modifier.align(Alignment.Start), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Box(modifier = Modifier.fillMaxWidth().height(80.dp).border(1.dp, Color.LightGray, RoundedCornerShape(12.dp)).padding(12.dp)) {
+                        Text(task.description, fontSize = 12.sp, color = Color.Black)
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Text("Tu Comentario", modifier = Modifier.align(Alignment.Start), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    OutlinedTextField(
+                        value = commentValue,
+                        onValueChange = onCommentChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Escribe algo...", fontSize = 12.sp) },
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ActionPillButton(
+                            if (selectedUri == null) "Añadir archivo" else "Archivo listo ✓",
+                            Modifier.weight(1f)
+                        ) {
+                            onAddFileClick()
+                        }
+                    }
+
+                    Button(
+                        onClick = onSendClick,
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        enabled = selectedUri != null, // BLOQUEADO SI NO HAY ARCHIVO
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                    ) {
+                        Text("Enviar evidencia", color = Color.White)
+                    }
+
+                    if (selectedUri != null) {
+                        Text("Archivo: ${selectedUri.lastPathSegment}", fontSize = 10.sp, color = Color.Gray, modifier = Modifier.padding(top = 4.dp))
+                    }
+                }
+
+                IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopEnd).offset(x = 10.dp, y = (-10).dp)) {
+                    Icon(Icons.Default.Close, "Cerrar", tint = Color.Black)
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun KanbanBoard(viewModel: DashboardViewModel, onTaskClick: (Task) -> Unit) {
@@ -173,20 +281,10 @@ fun DraggableTaskCard(task: Task, onClick: () -> Unit, onDragEnd: (Float) -> Uni
     var isDragging by remember { mutableStateOf(false) }
     val elevation by animateFloatAsState(if (isDragging) 8f else 2f)
 
-    val indicatorColor = remember(task.color, task.status) {
-        try {
-            if (!task.color.isNullOrBlank()) {
-                Color(android.graphics.Color.parseColor(task.color))
-            } else {
-                when {
-                    task.status.equals("TODO", ignoreCase = true) -> Color(0xFFE57373)
-                    task.status.contains("PROGRESO", ignoreCase = true) -> Color(0xFF64B5F6)
-                    task.status.contains("FINALIZADO", ignoreCase = true) -> Color(0xFF81C784)
-                    else -> Color.Gray
-                }
-            }
-        } catch (e: Exception) { Color.Gray }
-    }
+    val indicatorColor = try {
+        if (!task.color.isNullOrBlank()) Color(android.graphics.Color.parseColor(task.color))
+        else Color.Gray
+    } catch (e: Exception) { Color.Gray }
 
     Card(
         modifier = Modifier
@@ -215,119 +313,9 @@ fun DraggableTaskCard(task: Task, onClick: () -> Unit, onDragEnd: (Float) -> Uni
 }
 
 @Composable
-fun TaskDetailDialog(task: Task, onDismiss: () -> Unit, onAddFileClick: () -> Unit) {
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(40.dp),
-            color = Color.White,
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
-        ) {
-            Box(modifier = Modifier.padding(24.dp)) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Información de la tarea",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        color = Color.Black
-                    )
-
-                    Text(
-                        text = task.title,
-                        fontSize = 14.sp,
-                        color = Color.DarkGray,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
-                    )
-
-                    Text(
-                        "Notas",
-                        modifier = Modifier.align(Alignment.Start),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(140.dp)
-                            .border(1.dp, Color.Black, RoundedCornerShape(12.dp))
-                            .padding(12.dp)
-                    ) {
-                        Text(
-                            text = task.description,
-                            fontSize = 12.sp,
-                            lineHeight = 16.sp,
-                            color = Color.Black
-                        )
-                    }
-
-                    Spacer(Modifier.height(24.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        ActionPillButton("Añadir comentario", Modifier.weight(1f)) {
-                        }
-                        ActionPillButton("Añadir archivo", Modifier.weight(1f)) {
-                            onAddFileClick()
-                        }
-                    }
-
-                    Spacer(Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        ActionPillButton("Ver comentario", Modifier.weight(0.4f)) {
-                        }
-
-                        FileAttachmentCard(
-                            name = task.fileName ?: "Sin archivos adjuntos",
-                            type = "Documento",
-                            modifier = Modifier.weight(0.6f)
-                        )
-                    }
-                }
-
-                IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .offset(x = 10.dp, y = (-10).dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Cerrar",
-                        tint = Color.Black
-                    )
-                }
-            }
-        }
-    }
-}
-
-
-@Composable
 fun ActionPillButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Button(onClick = onClick, modifier = modifier.height(36.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.Black), shape = RoundedCornerShape(50.dp), contentPadding = PaddingValues(horizontal = 8.dp)) {
         Text(text, color = Color.White, fontSize = 10.sp)
-    }
-}
-
-@Composable
-fun FileAttachmentCard(name: String, type: String, modifier: Modifier = Modifier) {
-    Row(modifier = modifier.border(1.dp, Color.LightGray, RoundedCornerShape(12.dp)).padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(name, fontSize = 9.sp, maxLines = 1, fontWeight = FontWeight.Bold)
-            Text(type, fontSize = 8.sp, color = Color.Gray)
-        }
-        Box(Modifier.size(28.dp).background(Color(0xFFE0E0E0), RoundedCornerShape(6.dp)), contentAlignment = Alignment.Center) {
-            Icon(Icons.Default.Description, null, modifier = Modifier.size(16.dp), tint = Color.Gray)
-        }
     }
 }
 
@@ -362,13 +350,26 @@ fun AttachmentOption(icon: ImageVector, label: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun CustomMenuDialog(onDismiss: () -> Unit, onNavigate: (String) -> Unit) {
+fun CustomMenuDialog(
+    onDismiss: () -> Unit,
+    onNavigate: (String) -> Unit,
+    onLogout: () -> Unit
+) {
     Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = RoundedCornerShape(28.dp), color = Color.White, modifier = Modifier.width(300.dp)) {
-            Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = Color.White,
+            modifier = Modifier.width(300.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 MenuButton("Cambiar tablero") { onNavigate("advisers") }
                 MenuButton("Configuración") { onNavigate("settings") }
-                MenuButton("Salir") { onNavigate("login") }
+
+                MenuButton("Salir") { onLogout() }
             }
         }
     }

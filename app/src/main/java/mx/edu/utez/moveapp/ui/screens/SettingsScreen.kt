@@ -193,8 +193,6 @@ fun SettingsScreen(
     }
 }
 
-// --- COMPONENTES DE APOYO ---
-
 @Composable
 fun SettingsAttachmentOption(icon: ImageVector, label: String, onClick: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
