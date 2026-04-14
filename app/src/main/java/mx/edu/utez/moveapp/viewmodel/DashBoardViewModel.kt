@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import mx.edu.utez.moveapp.data.model.Task
 import mx.edu.utez.moveapp.data.model.TaskStatus
 import mx.edu.utez.moveapp.data.network.RetrofitInstance
+import mx.edu.utez.moveapp.data.request.ChangeStatusRequest
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -64,23 +65,44 @@ class DashboardViewModel : ViewModel() {
     }
 
     val todoTasks get() = tasks.filter {
-        it.status.equals("ToDo", ignoreCase = true) || it.status.equals("TODO", ignoreCase = true)
+        it.status.equals("TODO", ignoreCase = true)
     }
 
     val progressTasks get() = tasks.filter {
-        it.status.equals("Doing", ignoreCase = true) || it.status.equals("IN_PROGRESS", ignoreCase = true)
+        it.status.equals("Doing", ignoreCase = true)
     }
 
     val doneTasks get() = tasks.filter {
-        it.status.equals("Done", ignoreCase = true) || it.status.equals("DONE", ignoreCase = true)
+        it.status.equals("Done", ignoreCase = true)
     }
 
     fun moveTask(taskId: Int, newStatus: TaskStatus) {
+
+        val oldTasks = tasks
         tasks = tasks.map { task ->
             if (task.id == taskId) {
-                task.copy(status = newStatus.name)
-            } else {
-                task
+                task.copy(status = newStatus.value)
+            } else task
+        }
+
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.changeTaskStatus(
+                    "Bearer ${mx.edu.utez.moveapp.data.response.SessionManager.token}",
+                    taskId,
+                    ChangeStatusRequest(newStatus.value)
+                )
+
+                if (response.isSuccessful) {
+                    println("STATUS ACTUALIZADO EN BD")
+                } else {
+                    tasks = oldTasks
+                }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+
+                tasks = oldTasks
             }
         }
     }

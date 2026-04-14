@@ -16,8 +16,8 @@ data class Task(
     @SerializedName("fileName") val fileName: String? = null
 )
 
-enum class TaskStatus {
-    @SerializedName("ToDo") TODO,
-    @SerializedName("Doing") IN_PROGRESS,
-    @SerializedName("Done") DONE
+enum class TaskStatus(val value: String) {
+    TODO("TODO"),
+    IN_PROGRESS("Doing"),
+    DONE("Done")
 }

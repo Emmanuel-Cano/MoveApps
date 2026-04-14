@@ -34,10 +34,8 @@ fun TaskCard(task: Task, onClick: () -> Unit) {
                     .background(
                         color = when {
                             task.status.equals("TODO", ignoreCase = true) -> Color(0xFFE57373)
-                            task.status.equals("IN_PROGRESS", ignoreCase = true) ||
-                                    task.status.contains("PROGRESO", ignoreCase = true) -> Color(0xFF64B5F6)
-                            task.status.equals("DONE", ignoreCase = true) ||
-                                    task.status.contains("FINALIZADO", ignoreCase = true) -> Color(0xFF81C784)
+                            task.status.equals("Doing", ignoreCase = true) -> Color(0xFF64B5F6)
+                            task.status.equals("Done", ignoreCase = true) -> Color(0xFF81C784)
                             else -> Color.LightGray
                         },
                         shape = RoundedCornerShape(3.dp)

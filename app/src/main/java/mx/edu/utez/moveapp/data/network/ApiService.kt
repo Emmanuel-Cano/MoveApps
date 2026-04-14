@@ -3,6 +3,7 @@ package mx.edu.utez.moveapp.data.network
 import mx.edu.utez.moveapp.data.model.Task
 import mx.edu.utez.moveapp.data.request.AddPasswordRequest
 import mx.edu.utez.moveapp.data.request.ChangePasswordRequest
+import mx.edu.utez.moveapp.data.request.ChangeStatusRequest
 import mx.edu.utez.moveapp.data.request.LoginRequest
 import mx.edu.utez.moveapp.data.request.StudentRequest
 import mx.edu.utez.moveapp.data.request.UpdateNameRequest
@@ -50,13 +51,8 @@ interface ApiService {
 
     @GET("api/student/tasks/{boardID}") suspend fun getTasksByAdviser(@Path("boardID") adviserId: Int): Response<List<Task>>
 
-    @Multipart
-    @POST("api/student/submitEvidence")
-    suspend fun submitEvidence(
-        @Part("taskID") taskID: RequestBody,
-        @Part("comment") comment: RequestBody,
-        @Part files: List<MultipartBody.Part>
-    ): Response<SuccessResponse>
+    @Multipart @POST("api/student/submitEvidence") suspend fun submitEvidence(@Part("taskID") taskID: RequestBody, @Part("comment") comment: RequestBody, @Part files: List<MultipartBody.Part>): Response<SuccessResponse>
 
+    @PUT("api/student/task/{taskID}/status") suspend fun changeTaskStatus(@Header("Authorization") token: String, @Path("taskID") taskId: Int, @Body request: ChangeStatusRequest): Response<SuccessResponse>
 
 }
