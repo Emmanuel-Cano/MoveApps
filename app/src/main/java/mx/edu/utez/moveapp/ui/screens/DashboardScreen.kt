@@ -38,6 +38,7 @@ import mx.edu.utez.moveapp.viewmodel.DashboardViewModel
 import kotlin.math.roundToInt
 import mx.edu.utez.moveapp.R
 import androidx.compose.ui.platform.LocalContext
+import mx.edu.utez.moveapp.data.response.TaskDetailResponse
 import mx.edu.utez.moveapp.viewmodel.LoginViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -99,6 +100,7 @@ fun DashboardScreen(
                         selectedTask = it
                         selectedUri = null
                         evidenceComment = ""
+                        viewModel.loadTaskDetail(it.id)
                     }
                 )
             }
@@ -124,9 +126,13 @@ fun DashboardScreen(
         selectedTask?.let { task ->
             TaskDetailDialog(
                 task = task,
+                taskDetail = viewModel.selectedTaskDetail,
                 commentValue = evidenceComment,
                 onCommentChange = { evidenceComment = it },
-                onDismiss = { selectedTask = null },
+                onDismiss = {
+                    selectedTask = null
+                    viewModel.clearTaskDetail()
+                },
                 onAddFileClick = { showSheet = true },
                 selectedUri = selectedUri,
                 onSendClick = {
@@ -167,6 +173,7 @@ fun DashboardScreen(
 @Composable
 fun TaskDetailDialog(
     task: Task,
+    taskDetail: TaskDetailResponse?,
     commentValue: String,
     onCommentChange: (String) -> Unit,
     onDismiss: () -> Unit,
@@ -181,56 +188,128 @@ fun TaskDetailDialog(
             modifier = Modifier.fillMaxWidth().padding(16.dp)
         ) {
             Box(modifier = Modifier.padding(24.dp)) {
+
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Información de la tarea", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.Black)
-                    Text(task.title, fontSize = 14.sp, color = Color.DarkGray, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
 
-                    Text("Descripción", modifier = Modifier.align(Alignment.Start), fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                    Box(modifier = Modifier.fillMaxWidth().height(80.dp).border(1.dp, Color.LightGray, RoundedCornerShape(12.dp)).padding(12.dp)) {
-                        Text(task.description, fontSize = 12.sp, color = Color.Black)
+                    Text(
+                        "Información de la tarea",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color.Black
+                    )
+
+                    Text(
+                        task.title,
+                        fontSize = 14.sp,
+                        color = Color.DarkGray,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
+                    )
+
+                    Text("Descripción", modifier = Modifier.align(Alignment.Start))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .border(1.dp, Color.LightGray, RoundedCornerShape(12.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text(task.description, fontSize = 12.sp)
                     }
 
                     Spacer(Modifier.height(16.dp))
 
-                    Text("Tu Comentario", modifier = Modifier.align(Alignment.Start), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text(
+                        "Evaluación",
+                        modifier = Modifier.align(Alignment.Start),
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    when {
+                        taskDetail == null -> {
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+
+                        taskDetail.grade == null && taskDetail.feedback == null -> {
+                            Text(
+                                "Sin evaluación aún",
+                                color = Color.Gray,
+                                fontSize = 12.sp
+                            )
+                        }
+
+                        else -> {
+                            Text("Calificación", fontWeight = FontWeight.Medium)
+
+                            Text(
+                                text = taskDetail.grade?.toString() ?: "Sin calificar",
+                                color = if (taskDetail.grade != null) Color(0xFF494949) else Color.Gray,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Text("Retroalimentación", fontWeight = FontWeight.Medium)
+
+                            Text(
+                                text = taskDetail.feedback ?: "Sin comentarios",
+                                fontSize = 12.sp,
+                                color = Color.DarkGray
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Text("Tu Comentario", modifier = Modifier.align(Alignment.Start))
+
                     OutlinedTextField(
                         value = commentValue,
                         onValueChange = onCommentChange,
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Escribe algo...", fontSize = 12.sp) },
-                        shape = RoundedCornerShape(12.dp)
+                        placeholder = { Text("Escribe algo...") }
                     )
 
                     Spacer(Modifier.height(16.dp))
 
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ActionPillButton(
-                            if (selectedUri == null) "Añadir archivo" else "Archivo listo ✓",
-                            Modifier.weight(1f)
-                        ) {
-                            onAddFileClick()
-                        }
+                    Button(
+                        onClick = onAddFileClick,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (selectedUri == null) "Añadir archivo" else "Archivo listo ✓")
                     }
 
                     Button(
                         onClick = onSendClick,
-                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                        enabled = selectedUri != null, // BLOQUEADO SI NO HAY ARCHIVO
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        enabled = selectedUri != null,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                     ) {
                         Text("Enviar evidencia", color = Color.White)
                     }
 
                     if (selectedUri != null) {
-                        Text("Archivo: ${selectedUri.lastPathSegment}", fontSize = 10.sp, color = Color.Gray, modifier = Modifier.padding(top = 4.dp))
+                        Text(
+                            "Archivo: ${selectedUri.lastPathSegment}",
+                            fontSize = 10.sp
+                        )
                     }
                 }
 
-                IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopEnd).offset(x = 10.dp, y = (-10).dp)) {
-                    Icon(Icons.Default.Close, "Cerrar", tint = Color.Black)
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.TopEnd)
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = "Cerrar")
                 }
             }
         }

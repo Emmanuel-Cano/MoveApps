@@ -12,6 +12,7 @@ import mx.edu.utez.moveapp.data.response.AdviserResponse
 import mx.edu.utez.moveapp.data.response.LoginResponse
 import mx.edu.utez.moveapp.data.response.StudentProfileResponse
 import mx.edu.utez.moveapp.data.response.SuccessResponse
+import mx.edu.utez.moveapp.data.response.TaskDetailResponse
 import mx.edu.utez.moveapp.data.response.ValidateCodeResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -54,5 +55,7 @@ interface ApiService {
     @Multipart @POST("api/student/submitEvidence") suspend fun submitEvidence(@Part("taskID") taskID: RequestBody, @Part("comment") comment: RequestBody, @Part files: List<MultipartBody.Part>): Response<SuccessResponse>
 
     @PUT("api/student/task/{taskID}/status") suspend fun changeTaskStatus(@Header("Authorization") token: String, @Path("taskID") taskId: Int, @Body request: ChangeStatusRequest): Response<SuccessResponse>
+
+    @GET("api/student/task/{taskID}") suspend fun getTaskDetail(@Header("Authorization") token: String, @Path("taskID") taskId: Int): Response<TaskDetailResponse>
 
 }

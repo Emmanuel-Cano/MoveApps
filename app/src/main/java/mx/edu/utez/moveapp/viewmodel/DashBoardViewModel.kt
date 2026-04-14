@@ -15,12 +15,15 @@ import mx.edu.utez.moveapp.data.request.ChangeStatusRequest
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import mx.edu.utez.moveapp.data.response.TaskDetailResponse
 
 class DashboardViewModel : ViewModel() {
 
     var tasks by mutableStateOf(listOf<Task>())
     var isLoading by mutableStateOf(false)
     var advisorName by mutableStateOf("")
+
+    var selectedTaskDetail by mutableStateOf<TaskDetailResponse?>(null)
 
     fun loadData(boardId: Int?, name: String? = null) {
         if (boardId == null || boardId <= 0) return
@@ -143,6 +146,39 @@ class DashboardViewModel : ViewModel() {
         }
     }
 
+    fun loadTaskDetail(taskId: Int) {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.getTaskDetail(
+                    "Bearer ${mx.edu.utez.moveapp.data.response.SessionManager.token}",
+                    taskId
+                )
+
+                println("DETAIL_CODE: ${response.code()}")
+
+                val raw = response.errorBody()?.string()
+                println("DETAIL_ERROR: $raw")
+
+                val body = response.body()
+                println("DETAIL_BODY: $body")
+
+                if (response.isSuccessful && body != null) {
+                    selectedTaskDetail = body
+                } else {
+                    println("NO SE PUDO PARSEAR LA RESPUESTA")
+                }
+
+            } catch (e: Exception) {
+                println("EXCEPCION: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun clearTaskDetail() {
+        selectedTaskDetail = null
+    }
+
     private fun getFileName(contentResolver: android.content.ContentResolver, uri: Uri): String? {
         var name: String? = null
         val cursor = contentResolver.query(uri, null, null, null, null)
@@ -154,5 +190,7 @@ class DashboardViewModel : ViewModel() {
         }
         return name
     }
+
+
 
 }
