@@ -7,8 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import mx.edu.utez.moveapp.viewmodel.AdviserViewModel
 
 @Composable
@@ -28,8 +28,18 @@ fun AdviserListScreen(viewModel: AdviserViewModel, navController: NavController)
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
-        Box(Modifier.fillMaxWidth().background(Color.Black).padding(16.dp)) {
-            Text("Selecciona tu Asesor", color = Color.White, fontWeight = FontWeight.Bold)
+
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .background(Color.Black)
+                .padding(16.dp)
+        ) {
+            Text(
+                "Selecciona tu Asesor",
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
         }
 
         Box(
@@ -39,16 +49,21 @@ fun AdviserListScreen(viewModel: AdviserViewModel, navController: NavController)
                 .background(Color(0xFFD9D9D9), RoundedCornerShape(30.dp))
                 .padding(20.dp)
         ) {
+
             if (viewModel.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Color.Black)
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = Color.Black
+                )
             } else {
-                LazyColumn (
+                LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     contentPadding = PaddingValues(vertical = 10.dp)
-                ){
+                ) {
                     items(viewModel.advisers) { adviser ->
                         AdviserCard(
                             name = adviser.name,
+                            logo = adviser.logo,
                             onIngresarClick = {
                                 navController.navigate("dashboard/${adviser.id}/${adviser.name}")
                             }
@@ -61,20 +76,30 @@ fun AdviserListScreen(viewModel: AdviserViewModel, navController: NavController)
 }
 
 @Composable
-fun AdviserCard(name: String, onIngresarClick: () -> Unit) {
+fun AdviserCard(
+    name: String,
+    logo: String?,
+    onIngresarClick: () -> Unit
+) {
+
+    val initials = name
+        .split(" ")
+        .mapNotNull { it.firstOrNull()?.toString() }
+        .take(2)
+        .joinToString("")
+        .uppercase()
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+
+        Column(modifier = Modifier.padding(16.dp)) {
+
             Text(
                 text = "Asesor:",
                 fontSize = 14.sp,
-                fontWeight = FontWeight.Normal,
                 color = Color.Black
             )
 
@@ -82,22 +107,41 @@ fun AdviserCard(name: String, onIngresarClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(vertical = 8.dp)
             ) {
+
                 Box(
                     modifier = Modifier
                         .size(45.dp)
-                        .background(Color.White, CircleShape)
-                        .border(1.dp, Color.Black, CircleShape),
+                        .background(Color(0xFF2C2C2C), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = null,
-                        tint = Color.Black,
-                        modifier = Modifier.size(30.dp)
-                    )
+
+                    if (!logo.isNullOrBlank()) {
+
+                        AsyncImage(
+                            model = if (logo.startsWith("http")) {
+                                logo
+                            } else {
+                                "data:image/*;base64,$logo"
+                            },
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(45.dp)
+                                .clip(CircleShape),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                        )
+
+                    } else {
+
+                        Text(
+                            text = initials.ifBlank { "A" },
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
                 }
 
-                Spacer(Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Text(
                     text = name,

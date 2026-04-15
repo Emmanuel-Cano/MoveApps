@@ -1,6 +1,7 @@
 package mx.edu.utez.moveapp.ui.components.card
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,14 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun AdviserCard(name: String, onIngresarClick: () -> Unit) {
+
+    val initials = name
+        .split(" ")
+        .mapNotNull { it.firstOrNull()?.toString() }
+        .take(2)
+        .joinToString("")
+        .uppercase()
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -37,28 +46,37 @@ fun AdviserCard(name: String, onIngresarClick: () -> Unit) {
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
+
         Column(modifier = Modifier.padding(16.dp)) {
+
             Text(
                 text = "Asesor:",
                 fontSize = 14.sp,
                 color = Color.Black
             )
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(vertical = 8.dp)
             ) {
+
                 Surface(
                     shape = CircleShape,
-                    border = BorderStroke(1.dp, Color.Black),
+                    color = Color(0xFF2C2C2C),
                     modifier = Modifier.size(40.dp)
                 ) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = null,
-                        modifier = Modifier.padding(8.dp)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = initials.ifBlank { "A" },
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
                 }
+
                 Spacer(modifier = Modifier.width(12.dp))
+
                 Text(
                     text = name,
                     fontSize = 14.sp,
@@ -66,6 +84,7 @@ fun AdviserCard(name: String, onIngresarClick: () -> Unit) {
                     modifier = Modifier.weight(1f)
                 )
             }
+
             Button(
                 onClick = onIngresarClick,
                 modifier = Modifier.align(Alignment.End),

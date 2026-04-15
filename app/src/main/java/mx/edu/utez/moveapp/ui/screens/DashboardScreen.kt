@@ -68,15 +68,35 @@ fun DashboardScreen(
     var evidenceComment by remember { mutableStateOf("") }
 
     val sheetState = rememberModalBottomSheetState()
+
     val context = LocalContext.current
 
-    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-        showSheet = false
+    val imageUri = remember {
+        mutableStateOf<Uri?>(
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.provider",
+                File.createTempFile("photo_", ".jpg", context.cacheDir)
+            )
+        )
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) cameraLauncher.launch(null)
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            selectedUri = imageUri.value
+        }
     }
+
+    val permissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                imageUri.value?.let { uri ->
+                    cameraLauncher.launch(uri)
+                }
+            }
+        }
 
     val fileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
