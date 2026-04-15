@@ -55,8 +55,14 @@ interface ApiService {
         @Header("Authorization") token: String, // ¡OJO! Dile que se asegure de mandar "Bearer " + token
         @Path("adviserID") adviserId: Long
     ): Response<List<Task>> // Que revise que su modelo Task coincida con tu StudentTaskDto
-    @Multipart @POST("api/student/submitEvidence") suspend fun submitEvidence(@Part("taskID") taskID: RequestBody, @Part("comment") comment: RequestBody, @Part files: List<MultipartBody.Part>): Response<SuccessResponse>
-
+    @Multipart
+    @POST("api/student/submitEvidence")
+    suspend fun submitEvidence(
+        @Header("Authorization") token: String,
+        @Part("taskID") taskID: RequestBody,
+        @Part("comment") comment: RequestBody,
+        @Part files: List<MultipartBody.Part>
+    ): Response<SuccessResponse>
     @PUT("api/student/task/{taskID}/status") suspend fun changeTaskStatus(@Header("Authorization") token: String, @Path("taskID") taskId: Int, @Body request: ChangeStatusRequest): Response<SuccessResponse>
 
     @GET("api/student/task/{taskID}") suspend fun getTaskDetail(@Header("Authorization") token: String, @Path("taskID") taskId: Int): Response<TaskDetailResponse>

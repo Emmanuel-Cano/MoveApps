@@ -136,7 +136,9 @@ class DashboardViewModel : ViewModel() {
                 val taskIDBody = taskId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
                 val commentBody = comment.toRequestBody("text/plain".toMediaTypeOrNull())
 
+                // ASÍ DEBE QUEDAR (Copia y pega este bloque):
                 val response = RetrofitInstance.api.submitEvidence(
+                    "Bearer ${mx.edu.utez.moveapp.data.response.SessionManager.token}", // 👇 ESTA ES LA LÍNEA MÁGICA
                     taskIDBody,
                     commentBody,
                     listOf(filePart)
