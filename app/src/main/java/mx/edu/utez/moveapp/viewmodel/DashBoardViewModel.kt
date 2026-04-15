@@ -11,7 +11,9 @@ import kotlinx.coroutines.launch
 import mx.edu.utez.moveapp.data.model.Task
 import mx.edu.utez.moveapp.data.model.TaskStatus
 import mx.edu.utez.moveapp.data.network.RetrofitInstance
+import mx.edu.utez.moveapp.data.network.RetrofitInstance.api
 import mx.edu.utez.moveapp.data.request.ChangeStatusRequest
+import mx.edu.utez.moveapp.data.response.Notification
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -194,6 +196,24 @@ class DashboardViewModel : ViewModel() {
         return name
     }
 
+
+    var notifications by mutableStateOf<List<Notification>>(emptyList())
+        private set
+
+    fun loadNotifications(token: String) {
+        viewModelScope.launch {
+            val response = api.getNotifications("Bearer $token")
+            if (response.isSuccessful) {
+                notifications = response.body()?.data ?: emptyList()
+            }
+        }
+    }
+    fun markAsRead(token: String, id: Long) {
+        viewModelScope.launch {
+            api.markNotificationAsRead("Bearer $token", id)
+            loadNotifications(token)
+        }
+    }
 
 
 }

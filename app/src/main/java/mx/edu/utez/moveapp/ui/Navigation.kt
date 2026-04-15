@@ -114,7 +114,13 @@ fun Navigation() {
         }
 
         composable("notifications") {
-             NotificationsScreen(navController)
+            val dashboardViewModel: DashboardViewModel = viewModel()
+
+            NotificationsScreen(
+                navController = navController,
+                viewModel = dashboardViewModel,
+                token = loginViewModel.userToken ?: ""
+            )
         }
     }
 }

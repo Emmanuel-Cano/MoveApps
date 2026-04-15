@@ -307,7 +307,7 @@ fun TaskDetailDialog(
                         value = commentValue,
                         onValueChange = onCommentChange,
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Escribe algo...") }
+                        placeholder = { Text("Escribe algo") }
                     )
 
                     Spacer(Modifier.height(16.dp))

@@ -9,6 +9,7 @@ import mx.edu.utez.moveapp.data.request.UpdateNameRequest
 import mx.edu.utez.moveapp.data.request.ValidateCodeRequest
 import mx.edu.utez.moveapp.data.response.AdviserResponse
 import mx.edu.utez.moveapp.data.response.LoginResponse
+import mx.edu.utez.moveapp.data.response.NotificationResponse
 import mx.edu.utez.moveapp.data.response.StudentProfileResponse
 import mx.edu.utez.moveapp.data.response.SuccessResponse
 import mx.edu.utez.moveapp.data.response.TaskDetailResponse
@@ -56,5 +57,9 @@ interface ApiService {
     @PUT("api/student/task/{taskID}/status") suspend fun changeTaskStatus(@Header("Authorization") token: String, @Path("taskID") taskId: Int, @Body request: ChangeStatusRequest): Response<SuccessResponse>
 
     @GET("api/student/task/{taskID}") suspend fun getTaskDetail(@Header("Authorization") token: String, @Path("taskID") taskId: Int): Response<TaskDetailResponse>
+
+    @GET("api/student/notifications") suspend fun getNotifications(@Header("Authorization") token: String): Response<NotificationResponse>
+
+    @PUT("api/student/notifications/{id}/read") suspend fun markNotificationAsRead(@Header("Authorization") token: String, @Path("id") id: Long): Response<SuccessResponse>
 
 }
