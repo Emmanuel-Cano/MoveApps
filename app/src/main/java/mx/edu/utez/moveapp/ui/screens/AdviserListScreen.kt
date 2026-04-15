@@ -50,15 +50,10 @@ fun AdviserListScreen(viewModel: AdviserViewModel, navController: NavController)
                         AdviserCard(
                             name = adviser.name,
                             onIngresarClick = {
-                                val idFinal = when {
-                                    adviser.name.contains("Getsai", true) -> 1L
-                                    adviser.name.contains("Omar", true) -> 2L
-                                    adviser.name.contains("Getsa", true) -> 3L
-                                    adviser.name.contains("Nuevo", true) -> 4L
-                                    else -> 2L
-                                }
-
-                                navController.navigate("dashboard/$idFinal/${adviser.name}")
+                                // ✅ AHORA SÍ, USAMOS EL ID REAL QUE VIENE DE LA BASE DE DATOS
+                                // Nota para el de móvil: Asegúrate de que tu modelo 'Adviser'
+                                // tenga declarada la variable 'adviserID' o 'id' tal como la manda el backend.
+                                navController.navigate("dashboard/${adviser.id}/${adviser.name}")
                             }
                         )
                     }

@@ -87,11 +87,11 @@ fun Navigation() {
         composable(
             route = "dashboard/{adviserId}/{adviserName}",
             arguments = listOf(
-                navArgument("adviserId") { type = NavType.IntType },
+                navArgument("adviserId") { type = NavType.LongType },
                 navArgument("adviserName") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getInt("adviserId") ?: 0
+            val id = backStackEntry.arguments?.getLong("adviserId") ?: 0L
             val name = backStackEntry.arguments?.getString("adviserName") ?: "Asesor"
 
             DashboardScreen(

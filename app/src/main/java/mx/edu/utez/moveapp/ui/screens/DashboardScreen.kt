@@ -51,7 +51,7 @@ fun DashboardScreen(
     loginViewModel: LoginViewModel,
     navController: NavController,
     token: String,
-    adviserId: Int? = null,
+    adviserId: Long? = null,
     adviserName: String?
 ) {
     LaunchedEffect(adviserId) {
