@@ -119,30 +119,38 @@ class DashboardViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val contentResolver = context.contentResolver
+
                 val inputStream = contentResolver.openInputStream(uri)
                 val bytes = inputStream?.readBytes() ?: return@launch
-                inputStream.close()
+                inputStream?.close()
 
-                val requestFile = bytes.toRequestBody("image/*".toMediaTypeOrNull())
+                val mimeType = contentResolver.getType(uri) ?: "application/octet-stream"
+
+                val fileName = getFileName(contentResolver, uri) ?: "file"
+
+                val requestFile = bytes.toRequestBody(mimeType.toMediaTypeOrNull())
+
                 val filePart = MultipartBody.Part.createFormData(
                     "files",
-                    "evidencia.jpg",
+                    fileName,
                     requestFile
                 )
 
-                val taskIDBody = taskId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
-                val commentBody = comment.toRequestBody("text/plain".toMediaTypeOrNull())
+                val taskIDBody = taskId.toString()
+                    .toRequestBody("text/plain".toMediaTypeOrNull())
 
-                // ASÍ DEBE QUEDAR (Copia y pega este bloque):
+                val commentBody = comment
+                    .toRequestBody("text/plain".toMediaTypeOrNull())
+
                 val response = RetrofitInstance.api.submitEvidence(
-                    "Bearer ${mx.edu.utez.moveapp.data.response.SessionManager.token}", // 👇 ESTA ES LA LÍNEA MÁGICA
+                    "Bearer ${mx.edu.utez.moveapp.data.response.SessionManager.token}",
                     taskIDBody,
                     commentBody,
                     listOf(filePart)
                 )
 
                 if (response.isSuccessful) {
-                    println("DEBUG_UPLOAD: ¡Éxito! ${response.body()?.message}")
+                    println("DEBUG_UPLOAD: OK ${response.body()?.message}")
                 } else {
                     println("DEBUG_UPLOAD_ERROR: ${response.code()} - ${response.errorBody()?.string()}")
                 }
@@ -152,7 +160,6 @@ class DashboardViewModel : ViewModel() {
             }
         }
     }
-
     fun loadTaskDetail(taskId: Int) {
         viewModelScope.launch {
             try {

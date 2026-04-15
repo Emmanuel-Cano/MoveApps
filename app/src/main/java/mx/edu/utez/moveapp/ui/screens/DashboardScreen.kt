@@ -485,12 +485,41 @@ fun ActionPillButton(text: String, modifier: Modifier = Modifier, onClick: () ->
 
 @Composable
 fun HeaderUser(name: String) {
-    Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(40.dp).background(Color.DarkGray, CircleShape), contentAlignment = Alignment.Center) {
-            Icon(Icons.Default.Person, null, tint = Color.White)
+
+    val initials = name
+        .split(" ")
+        .mapNotNull { it.firstOrNull()?.toString() }
+        .take(2)
+        .joinToString("")
+        .uppercase()
+
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .background(Color(0xFF2C2C2C), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = initials.ifBlank { "A" },
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
         }
+
         Spacer(Modifier.width(10.dp))
-        Text("Asesor: $name", fontWeight = FontWeight.Medium, color = Color.Black)
+
+        Text(
+            "Asesor: $name",
+            fontWeight = FontWeight.Medium,
+            color = Color.Black
+        )
     }
 }
 
