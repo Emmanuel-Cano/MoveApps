@@ -27,10 +27,8 @@ class DashboardViewModel : ViewModel() {
 
     var selectedTaskDetail by mutableStateOf<TaskDetailResponse?>(null)
 
-    // 1. Cambiamos boardId: Int? por adviserId: Long?
     fun loadData(adviserId: Long?, name: String? = null) {
 
-        // 2. Comparamos con 0L (cero tipo Long)
         if (adviserId == null || adviserId <= 0L) return
 
         name?.let { advisorName = it }
@@ -42,7 +40,6 @@ class DashboardViewModel : ViewModel() {
                 println("DEBUG_ID: adviserId=$adviserId")
                 println("DEBUG_TOKEN: ${mx.edu.utez.moveapp.data.response.SessionManager.token}")
 
-                // 3. Pasamos el adviserId correcto
                 val response = RetrofitInstance.api.getTasksByAdviser(
                     "Bearer ${mx.edu.utez.moveapp.data.response.SessionManager.token}",
                     adviserId
@@ -162,13 +159,11 @@ class DashboardViewModel : ViewModel() {
                     taskId
                 )
 
-                println("DETAIL_CODE: ${response.code()}")
 
                 val raw = response.errorBody()?.string()
-                println("DETAIL_ERROR: $raw")
 
                 val body = response.body()
-                println("DETAIL_BODY: $body")
+
 
                 if (response.isSuccessful && body != null) {
                     selectedTaskDetail = body

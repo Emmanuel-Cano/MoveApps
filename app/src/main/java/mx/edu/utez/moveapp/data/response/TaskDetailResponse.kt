@@ -2,15 +2,29 @@ package mx.edu.utez.moveapp.data.response
 
 import com.google.gson.annotations.SerializedName
 
+
 data class TaskDetailResponse(
-    @SerializedName("taskID") val taskID: Int,
-    @SerializedName("name") val name: String,
-    @SerializedName("description") val description: String,
-    @SerializedName("statusKanban") val statusKanban: String,
-    @SerializedName("color") val color: String?,
-    @SerializedName("attachments") val attachments: List<AttachmentDto> = emptyList(),
+    @SerializedName("taskID")
+    val taskID: Long,
 
+    @SerializedName("name")
+    val name: String,
 
-    @SerializedName("grade") val grade: Double?,
-    @SerializedName("feedback") val feedback: String?
+    @SerializedName("description")
+    val description: String,
+
+    @SerializedName("statusKanban")
+    val statusKanban: String,
+
+    @SerializedName("color")
+    val color: String?,
+
+    @SerializedName("grade")
+    val grade: Double?,
+
+    @SerializedName("feedback")
+    val feedback: String?,
+
+    @SerializedName("attachments")
+    val attachments: List<AttachmentDto>?
 )

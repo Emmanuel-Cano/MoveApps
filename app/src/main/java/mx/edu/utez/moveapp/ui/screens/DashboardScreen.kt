@@ -42,6 +42,9 @@ import mx.edu.utez.moveapp.viewmodel.LoginViewModel
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Base64
+import androidx.core.content.FileProvider
+import java.io.File
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -171,7 +174,6 @@ fun DashboardScreen(
         }
     }
 }
-
 @Composable
 fun TaskDetailDialog(
     task: Task,
@@ -184,11 +186,14 @@ fun TaskDetailDialog(
     onSendClick: () -> Unit
 ) {
     val context = LocalContext.current
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(40.dp),
             color = Color.White,
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
             Box(modifier = Modifier.padding(24.dp)) {
 
@@ -211,7 +216,11 @@ fun TaskDetailDialog(
                         modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
                     )
 
-                    Text("Descripción", modifier = Modifier.align(Alignment.Start))
+                    Text(
+                        "Descripción",
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -235,7 +244,7 @@ fun TaskDetailDialog(
                     when {
                         taskDetail == null -> {
                             Text(
-                                "Sin retroalimntación",
+                                "Sin retroalimentación",
                                 color = Color.Gray,
                                 fontSize = 12.sp
                             )
@@ -270,6 +279,8 @@ fun TaskDetailDialog(
                         }
                     }
 
+                    Spacer(Modifier.height(12.dp))
+
                     Text(
                         "Archivos del asesor",
                         modifier = Modifier.align(Alignment.Start),
@@ -278,16 +289,22 @@ fun TaskDetailDialog(
 
                     Spacer(Modifier.height(8.dp))
 
-                    if (taskDetail?.attachments.isNullOrEmpty()) {
+                    val attachments = taskDetail?.attachments
+
+                    if (attachments.isNullOrEmpty()) {
                         Text("No hay archivos adjuntos", color = Color.Gray)
                     } else {
-                        taskDetail!!.attachments.forEach { file ->
-
+                        attachments.forEach { file ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        openFile(context, file.url)
+                                        openBase64File(
+                                            context,
+                                            file.file,
+                                            file.fileName,
+                                            file.fileType
+                                        )
                                     }
                                     .padding(vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -301,7 +318,10 @@ fun TaskDetailDialog(
 
                     Spacer(Modifier.height(16.dp))
 
-                    Text("Tu Comentario", modifier = Modifier.align(Alignment.Start))
+                    Text(
+                        "Tu Comentario",
+                        modifier = Modifier.align(Alignment.Start)
+                    )
 
                     OutlinedTextField(
                         value = commentValue,
@@ -320,21 +340,25 @@ fun TaskDetailDialog(
                             contentColor = Color.White
                         )
                     ) {
-                        Text(if (selectedUri == null) "Añadir archivo" else "Archivo listo ")
+                        Text(if (selectedUri == null) "Añadir archivo" else "Archivo listo")
                     }
 
                     Button(
                         onClick = onSendClick,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
                         enabled = selectedUri != null,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF4CAF50)
+                        )
                     ) {
                         Text("Enviar evidencia", color = Color.White)
                     }
 
-                    if (selectedUri != null) {
+                    selectedUri?.let {
                         Text(
-                            "Archivo: ${selectedUri.lastPathSegment}",
+                            "Archivo: ${it.lastPathSegment ?: "archivo"}",
                             fontSize = 10.sp
                         )
                     }
@@ -351,13 +375,27 @@ fun TaskDetailDialog(
     }
 }
 
-fun openFile(context: Context, url: String) {
+
+fun openBase64File(context: Context, base64: String, fileName: String, mimeType: String) {
     try {
+        val bytes = Base64.decode(base64, Base64.DEFAULT)
+
+        val file = File(context.cacheDir, fileName)
+        file.writeBytes(bytes)
+
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            file
+        )
+
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(Uri.parse(url), "*/*")
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            setDataAndType(uri, mimeType)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(intent)
+
+        context.startActivity(Intent.createChooser(intent, "Abrir archivo"))
+
     } catch (e: Exception) {
         e.printStackTrace()
     }

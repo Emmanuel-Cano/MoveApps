@@ -50,9 +50,6 @@ fun AdviserListScreen(viewModel: AdviserViewModel, navController: NavController)
                         AdviserCard(
                             name = adviser.name,
                             onIngresarClick = {
-                                // ✅ AHORA SÍ, USAMOS EL ID REAL QUE VIENE DE LA BASE DE DATOS
-                                // Nota para el de móvil: Asegúrate de que tu modelo 'Adviser'
-                                // tenga declarada la variable 'adviserID' o 'id' tal como la manda el backend.
                                 navController.navigate("dashboard/${adviser.id}/${adviser.name}")
                             }
                         )
