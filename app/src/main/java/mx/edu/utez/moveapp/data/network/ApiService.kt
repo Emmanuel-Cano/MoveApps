@@ -2,7 +2,6 @@ package mx.edu.utez.moveapp.data.network
 
 import mx.edu.utez.moveapp.data.model.Task
 import mx.edu.utez.moveapp.data.request.AddPasswordRequest
-import mx.edu.utez.moveapp.data.request.ChangePasswordRequest
 import mx.edu.utez.moveapp.data.request.ChangeStatusRequest
 import mx.edu.utez.moveapp.data.request.LoginRequest
 import mx.edu.utez.moveapp.data.request.StudentRequest
@@ -50,7 +49,7 @@ interface ApiService {
 
     @Multipart @POST("api/student/uploadLogo") suspend fun uploadLogo(@Part file: MultipartBody.Part): Response<SuccessResponse>
 
-    @GET("api/student/tasks/{boardID}") suspend fun getTasksByAdviser(@Path("boardID") adviserId: Int): Response<List<Task>>
+    @GET("api/student/tasks/{boardID}") suspend fun getTasksByAdviser(@Header("Authorization") token: String, @Path("boardID") adviserId: Int): Response<List<Task>>
 
     @Multipart @POST("api/student/submitEvidence") suspend fun submitEvidence(@Part("taskID") taskID: RequestBody, @Part("comment") comment: RequestBody, @Part files: List<MultipartBody.Part>): Response<SuccessResponse>
 

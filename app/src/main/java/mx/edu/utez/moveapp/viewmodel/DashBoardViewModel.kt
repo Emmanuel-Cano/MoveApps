@@ -37,7 +37,10 @@ class DashboardViewModel : ViewModel() {
                 println("DEBUG_ID: adviserId=$boardId")
                 println("DEBUG_TOKEN: ${mx.edu.utez.moveapp.data.response.SessionManager.token}")
 
-                val response = RetrofitInstance.api.getTasksByAdviser(boardId)
+                val response = RetrofitInstance.api.getTasksByAdviser(
+                    "Bearer ${mx.edu.utez.moveapp.data.response.SessionManager.token}",
+                    boardId
+                )
 
                 println("DEBUG_RESPONSE_CODE: ${response.code()}")
                 println("DEBUG_RESPONSE_BODY: ${response.body()}")

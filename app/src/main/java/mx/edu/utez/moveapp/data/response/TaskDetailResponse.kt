@@ -8,7 +8,8 @@ data class TaskDetailResponse(
     @SerializedName("description") val description: String,
     @SerializedName("statusKanban") val statusKanban: String,
     @SerializedName("color") val color: String?,
-    @SerializedName("attachments") val attachments: List<Any> = emptyList(),
+    @SerializedName("attachments") val attachments: List<AttachmentDto> = emptyList(),
+
 
     @SerializedName("grade") val grade: Double?,
     @SerializedName("feedback") val feedback: String?

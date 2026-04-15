@@ -1,7 +1,6 @@
 package mx.edu.utez.moveapp.ui.screens
 
 import android.Manifest
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
@@ -40,6 +39,10 @@ import mx.edu.utez.moveapp.R
 import androidx.compose.ui.platform.LocalContext
 import mx.edu.utez.moveapp.data.response.TaskDetailResponse
 import mx.edu.utez.moveapp.viewmodel.LoginViewModel
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,7 +75,6 @@ fun DashboardScreen(
         if (granted) cameraLauncher.launch(null)
     }
 
-    // Documentos y fotos
     val fileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
             selectedUri = it
@@ -181,6 +183,7 @@ fun TaskDetailDialog(
     selectedUri: Uri?,
     onSendClick: () -> Unit
 ) {
+    val context = LocalContext.current
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(40.dp),
@@ -231,12 +234,11 @@ fun TaskDetailDialog(
 
                     when {
                         taskDetail == null -> {
-                            Box(
-                                modifier = Modifier.fillMaxWidth(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
-                            }
+                            Text(
+                                "Sin retroalimntación",
+                                color = Color.Gray,
+                                fontSize = 12.sp
+                            )
                         }
 
                         taskDetail.grade == null && taskDetail.feedback == null -> {
@@ -252,7 +254,7 @@ fun TaskDetailDialog(
 
                             Text(
                                 text = taskDetail.grade?.toString() ?: "Sin calificar",
-                                color = if (taskDetail.grade != null) Color(0xFF494949) else Color.Gray,
+                                color = Color(0xFF494949),
                                 fontWeight = FontWeight.Bold
                             )
 
@@ -265,6 +267,35 @@ fun TaskDetailDialog(
                                 fontSize = 12.sp,
                                 color = Color.DarkGray
                             )
+                        }
+                    }
+
+                    Text(
+                        "Archivos del asesor",
+                        modifier = Modifier.align(Alignment.Start),
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    if (taskDetail?.attachments.isNullOrEmpty()) {
+                        Text("No hay archivos adjuntos", color = Color.Gray)
+                    } else {
+                        taskDetail!!.attachments.forEach { file ->
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        openFile(context, file.url)
+                                    }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.AttachFile, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text(file.fileName)
+                            }
                         }
                     }
 
@@ -283,9 +314,13 @@ fun TaskDetailDialog(
 
                     Button(
                         onClick = onAddFileClick,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Black,
+                            contentColor = Color.White
+                        )
                     ) {
-                        Text(if (selectedUri == null) "Añadir archivo" else "Archivo listo ✓")
+                        Text(if (selectedUri == null) "Añadir archivo" else "Archivo listo ")
                     }
 
                     Button(
@@ -313,6 +348,18 @@ fun TaskDetailDialog(
                 }
             }
         }
+    }
+}
+
+fun openFile(context: Context, url: String) {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(Uri.parse(url), "*/*")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }
 
