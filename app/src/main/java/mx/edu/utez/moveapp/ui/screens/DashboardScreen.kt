@@ -1,8 +1,5 @@
 package mx.edu.utez.moveapp.ui.screens
 
-import android.Manifest
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -43,8 +40,12 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Base64
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import java.io.File
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,9 +69,7 @@ fun DashboardScreen(
     var evidenceComment by remember { mutableStateOf("") }
 
     val sheetState = rememberModalBottomSheetState()
-
     val context = LocalContext.current
-
     val imageUri = remember {
         mutableStateOf<Uri?>(
             FileProvider.getUriForFile(
@@ -80,7 +79,6 @@ fun DashboardScreen(
             )
         )
     }
-
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { success ->
@@ -88,106 +86,135 @@ fun DashboardScreen(
             selectedUri = imageUri.value
         }
     }
-
     val permissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
-                imageUri.value?.let { uri ->
-                    cameraLauncher.launch(uri)
-                }
+                imageUri.value?.let { cameraLauncher.launch(it) }
             }
         }
 
-    val fileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    val fileLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
         uri?.let {
             selectedUri = it
         }
-        showSheet = false
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFBCBCBC))) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            TopBar(
-                onMenuClick = { showMenu = true },
-                onNotificationsClick = { navController.navigate("notifications") }
-            )
+    val pullRefreshState = rememberPullToRefreshState()
 
-            HeaderUser(viewModel.advisorName)
+    PullToRefreshBox(
+        isRefreshing = viewModel.isLoading,
+        onRefresh = {
+            viewModel.loadData(adviserId, adviserName)
+        },
+        state = pullRefreshState,
+        modifier = Modifier.fillMaxSize()
+    ) {
 
-            if (viewModel.isLoading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color.Black)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFBCBCBC))
+        ) {
+
+            Column(modifier = Modifier.fillMaxSize()) {
+
+                TopBar(
+                    onMenuClick = { showMenu = true },
+                    onNotificationsClick = { navController.navigate("notifications") }
+                )
+
+                HeaderUser(viewModel.advisorName)
+
+                if (viewModel.isLoading) {
+                    Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color.Black)
+                    }
+                } else {
+                    KanbanBoard(
+                        viewModel = viewModel,
+                        onTaskClick = {
+                            selectedTask = it
+                            selectedUri = null
+                            evidenceComment = ""
+                            viewModel.loadTaskDetail(it.id)
+                        }
+                    )
                 }
-            } else {
-                KanbanBoard(
-                    viewModel = viewModel,
-                    onTaskClick = {
-                        selectedTask = it
-                        selectedUri = null
-                        evidenceComment = ""
-                        viewModel.loadTaskDetail(it.id)
+            }
+
+            if (showMenu) {
+                CustomMenuDialog(
+                    onDismiss = { showMenu = false },
+                    onNavigate = { route ->
+                        showMenu = false
+                        navController.navigate(route)
+                    },
+                    onLogout = {
+                        showMenu = false
+                        loginViewModel.clearSession()
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
                 )
             }
-        }
 
-        if (showMenu) {
-            CustomMenuDialog(
-                onDismiss = { showMenu = false },
-                onNavigate = { route ->
-                    showMenu = false
-                    navController.navigate(route)
-                },
-                onLogout = {
-                    showMenu = false
-                    loginViewModel.clearSession()
-                    navController.navigate("login") {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        selectedTask?.let { task ->
-            TaskDetailDialog(
-                task = task,
-                taskDetail = viewModel.selectedTaskDetail,
-                commentValue = evidenceComment,
-                onCommentChange = { evidenceComment = it },
-                onDismiss = {
-                    selectedTask = null
-                    viewModel.clearTaskDetail()
-                },
-                onAddFileClick = { showSheet = true },
-                selectedUri = selectedUri,
-                onSendClick = {
-                    selectedUri?.let { uri ->
-                        viewModel.uploadEvidence(
-                            task.id,
-                            evidenceComment.ifBlank { "Sin comentario" },
-                            uri,
-                            context
-                        )
+            selectedTask?.let { task ->
+                TaskDetailDialog(
+                    task = task,
+                    taskDetail = viewModel.selectedTaskDetail,
+                    commentValue = evidenceComment,
+                    onCommentChange = { evidenceComment = it },
+                    onDismiss = {
                         selectedTask = null
+                        viewModel.clearTaskDetail()
+                    },
+                    onAddFileClick = { showSheet = true },
+                    selectedUri = selectedUri,
+                    onSendClick = {
+                        selectedUri?.let { uri ->
+                            viewModel.uploadEvidence(
+                                task.id,
+                                evidenceComment.ifBlank { "Sin comentario" },
+                                uri,
+                                context
+                            )
+                            selectedTask = null
+                        }
                     }
-                }
-            )
-        }
+                )
+            }
 
+            if (showSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { showSheet = false },
+                    sheetState = sheetState,
+                    containerColor = Color.White
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 20.dp, end = 20.dp, bottom = 40.dp)
+                    ) {
+                        Text(
+                            "Adjuntar Evidencia",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
 
-        if (showSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showSheet = false },
-                sheetState = sheetState,
-                containerColor = Color.White
-            ) {
-                Column(modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 40.dp)) {
-                    Text("Adjuntar Evidencia", fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(vertical = 16.dp))
-                    AttachmentOption(Icons.Default.AddAPhoto, "Tomar foto") {
-                        permissionLauncher.launch(Manifest.permission.CAMERA)
-                    }
-                    AttachmentOption(Icons.Default.Collections, "Seleccionar foto / archivo") {
-                        fileLauncher.launch("*/*")
+                        AttachmentOption(Icons.Default.AddAPhoto, "Tomar foto") {
+                            permissionLauncher.launch(android.Manifest.permission.CAMERA)
+                        }
+
+                        AttachmentOption(Icons.Default.Collections, "Seleccionar foto / archivo") {
+                            fileLauncher.launch("*/*")
+                        }
                     }
                 }
             }
@@ -544,12 +571,54 @@ fun HeaderUser(name: String) {
 }
 
 @Composable
-fun TopBar(onMenuClick: () -> Unit, onNotificationsClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().background(Color.Black).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-        Image(painter = painterResource(id = R.drawable.move), contentDescription = null, modifier = Modifier.size(45.dp))
-        Spacer(Modifier.weight(1f))
-        Icon(Icons.Default.Notifications, null, tint = Color.White, modifier = Modifier.clickable { onNotificationsClick() }.padding(end = 16.dp))
-        Icon(Icons.Default.Menu, null, tint = Color.White, modifier = Modifier.clickable { onMenuClick() })
+fun TopBar(
+    onMenuClick: () -> Unit,
+    onNotificationsClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.Black)
+            .padding(16.dp)
+    ) {
+
+        Image(
+            painter = painterResource(id = R.drawable.move),
+            contentDescription = null,
+            modifier = Modifier
+                .size(45.dp)
+                .align(Alignment.CenterStart)
+        )
+
+        Text(
+            text = "Tablero",
+            color = Color.White,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.align(Alignment.Center)
+        )
+
+        Row(
+            modifier = Modifier.align(Alignment.CenterEnd),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Icon(
+                imageVector = Icons.Default.Notifications,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier
+                    .clickable { onNotificationsClick() }
+                    .padding(end = 16.dp)
+            )
+
+            Icon(
+                imageVector = Icons.Default.Menu,
+                contentDescription = "Menu",
+                tint = Color.White,
+                modifier = Modifier.clickable { onMenuClick() }
+            )
+        }
     }
 }
 

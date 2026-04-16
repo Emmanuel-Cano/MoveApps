@@ -27,6 +27,7 @@ class DashboardViewModel : ViewModel() {
 
     var selectedTaskDetail by mutableStateOf<TaskDetailResponse?>(null)
 
+
     fun loadData(adviserId: Long?, name: String? = null) {
 
         if (adviserId == null || adviserId <= 0L) return
@@ -205,7 +206,6 @@ class DashboardViewModel : ViewModel() {
 
 
     var notifications by mutableStateOf<List<Notification>>(emptyList())
-        private set
 
     fun loadNotifications(token: String) {
         viewModelScope.launch {
@@ -217,8 +217,19 @@ class DashboardViewModel : ViewModel() {
     }
     fun markAsRead(token: String, id: Long) {
         viewModelScope.launch {
-            api.markNotificationAsRead("Bearer $token", id)
-            loadNotifications(token)
+            notifications = notifications.map {
+                if (it.id == id) it.copy(read = true) else it
+            }
+
+            try {
+                api.markNotificationAsRead("Bearer $token", id)
+
+                loadNotifications(token)
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                loadNotifications(token)
+            }
         }
     }
 

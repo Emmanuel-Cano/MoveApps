@@ -66,6 +66,7 @@ fun NotificationsScreen(
                     isRead = item.read,
                     onClick = {
                         viewModel.markAsRead(token, item.id)
+                        navController.navigate("dashboard/${item.taskId}/${item.message}")
                     }
                 )
             }

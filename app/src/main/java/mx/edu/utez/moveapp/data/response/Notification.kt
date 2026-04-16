@@ -11,7 +11,9 @@ data class Notification(
     val message: String,
 
     @SerializedName("isRead")
-    val read: Boolean
+    val read: Boolean,
+
+    val taskId: Long
 )
 
 data class NotificationResponse(
