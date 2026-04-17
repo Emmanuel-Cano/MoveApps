@@ -165,7 +165,16 @@ class LoginViewModel : ViewModel() {
 
                 if (response.isSuccessful) {
 
-                    val tokenResponse = response.body()?.token ?: ""
+                    val body = response.body()
+
+                    val tokenResponse = body?.token ?: ""
+                    val rol = body?.user?.rol ?: ""
+
+                    if (rol == "ADMIN" || rol == "ADVISER") {
+                        errorMessage = "Acceso restringido: usa la aplicación web"
+                        return@launch
+                    }
+
                     userToken = tokenResponse
                     SessionManager.token = tokenResponse
                     goToHome = true
@@ -180,7 +189,7 @@ class LoginViewModel : ViewModel() {
 
             } catch (e: Exception) {
                 e.printStackTrace()
-                errorMessage = e.message ?: "Error desconocido"
+                errorMessage = "Error de conexión"
             }
 
             isLoading = false
