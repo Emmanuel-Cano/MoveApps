@@ -12,6 +12,7 @@ import mx.edu.utez.moveapp.data.request.LoginRequest
 import mx.edu.utez.moveapp.data.request.StudentRequest
 import mx.edu.utez.moveapp.data.request.ValidateCodeRequest
 import mx.edu.utez.moveapp.data.response.SessionManager
+import android.util.Patterns
 
 class LoginViewModel : ViewModel() {
 
@@ -55,7 +56,7 @@ class LoginViewModel : ViewModel() {
                     goToVerifyCode = true
                 } else {
                     errorMessage =
-                        "Error"
+                        "Correo no registrado"
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -165,14 +166,16 @@ class LoginViewModel : ViewModel() {
                 if (response.isSuccessful) {
 
                     val tokenResponse = response.body()?.token ?: ""
-
                     userToken = tokenResponse
                     SessionManager.token = tokenResponse
-
                     goToHome = true
 
                 } else {
-                    errorMessage = "Error en login"
+                    when (response.code()) {
+                        401 -> errorMessage = "Correo o contraseña incorrecta"
+                        404 -> errorMessage = "Usuario no encontrado"
+                        else -> errorMessage = "Correo o contraseña incorrecta"
+                    }
                 }
 
             } catch (e: Exception) {
